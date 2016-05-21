@@ -59,7 +59,6 @@ class SimpleTestConfiguration(BaseTestConfiguration):
     test_structure = BaseTestCase()
     score_limit = 0
 
-
     def post_submit(self, provided_files):
         """
         Extract the submission program and run the test.
@@ -73,5 +72,7 @@ class SimpleTestConfiguration(BaseTestConfiguration):
         Traverse through the test structure, evaluate each test, and compute
         the final score based on the structure.
         """
-        score, message = test_structure.evaluate(executable, this.check_script)
+        score, message = self.test_structure.evaluate(
+            executable, self.check_script
+        )
         return score, message
