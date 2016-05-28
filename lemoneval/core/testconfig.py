@@ -4,7 +4,7 @@ import os
 import os.path
 from lemoneval.core.checkscript import BaseCheckScript
 from lemoneval.core.executable import ExecutableFactory
-from lemoneval.core.testcase import BaseTestCase
+from lemoneval.core.testcase import BaseTest
 
 
 class BaseTestConfiguration(object):
@@ -56,23 +56,23 @@ class SimpleTestConfiguration(BaseTestConfiguration):
     """
     check_script = BaseCheckScript()
     executable_factory = ExecutableFactory(require=['source_file'])
-    test_structure = BaseTestCase()
+    test_structure = BaseTest()
     score_limit = 0
 
-    def post_submit(self, provided_files):
+    def post_submit(self, provided_files, reporter=None):
         """
         Extract the submission program and run the test.
         """
         executable = self.executable_factory(provided_files)
-        score, message = self.run_all_tests(executable)
-        return score, message
+        score = self.run_all_tests(executable, reporter)
+        return score
 
-    def run_all_tests(self, executable):
+    def run_all_tests(self, executable, reporter):
         """
         Traverse through the test structure, evaluate each test, and compute
         the final score based on the structure.
         """
-        score, message = self.test_structure.evaluate(
-            executable, self.check_script
+        score = self.test_structure.evaluate(
+            executable, self.check_script, reporter=reporter
         )
-        return score, message
+        return score
