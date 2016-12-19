@@ -144,7 +144,7 @@ class OperatorNode(BaseTestNode):
         return self.op(*subscores)
 
 
-class RandomScoreNode(BaseTestNode):
+class LotteryNode(BaseTestNode):
     """
     A node which represents a random score.
     """

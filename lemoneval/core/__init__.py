@@ -2,10 +2,10 @@
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
 from .graph import (
-    BaseTestNode, ConstantNode, OperatorNode, RandomScoreNode, SimpleTestNode
+    BaseTestNode, ConstantNode, OperatorNode, LotteryNode, SimpleTestNode
     )
 
 __all__ = [
-    'BaseTestNode', 'ConstantNode', 'OperatorNode', 'RandomScoreNode',
+    'BaseTestNode', 'ConstantNode', 'OperatorNode', 'LotteryNode',
     'SimpleTestNode',
     ]
