@@ -3,6 +3,7 @@
 
 import operator
 import random
+from typing import Optional, Dict
 from numbers import Number
 
 
@@ -12,6 +13,17 @@ class BaseTestNode(object):
     so that test cases can be composed to create a more complex test suite
     structure.
     """
+    def __init__(self):
+        # List of nodes which should be evaluated before this node.
+        self.dependencies = []  # type: List[BaseTestNode]
+
+    def evaluate(self,
+                 data: Optional[Dict] = None,
+                 history: Optional[Dict] = None):
+        # data: a mapping from any identifier to any data
+        # history: a mapping from each computed node to score
+        raise NotImplementedError
+
     def __add__(self, other):
         return OperatorNode(operator.add, self, other)
     def __radd__(self, other):
@@ -87,7 +99,16 @@ class ConstantNode(BaseTestNode):
     The node which always evaluate to a constant.
     """
     def __init__(self, value):
+        self.dependencies = []
         self.value = value
+
+    def evaluate(self,
+                 data: Optional[Dict] = None,
+                 history: Optional[Dict] = None):
+        """
+        Return the constant as the score.
+        """
+        return self.value
 
 
 class OperatorNode(BaseTestNode):
@@ -95,28 +116,41 @@ class OperatorNode(BaseTestNode):
     A node which represents an operation on one or more test nodes.
     """
     def __init__(self, op, *args):
+        self.dependencies = []
         self.op = op
-        self.children = []
         for arg in args:
             if isinstance(arg, BaseTestNode):
-                self.children.append(arg)
+                self.dependencies.append(arg)
             elif isinstance(arg, Number):
-                self.children.append(ConstantNode(arg))
+                self.dependencies.append(ConstantNode(arg))
             else:
                 raise TypeError('Unsupported type in graph.')
+
+    def evaluate(self,
+                 data: Optional[Dict] = None,
+                 history: Optional[Dict] = None):
+        """
+        Assuming that all dependencies are pre-computed, fetch all those
+        scores from the history then apply the operation.
+        """
+        subscores = [ history[precursor] for precursor in self.dependencies ]
+        return self.op(*subscores)
 
 
 class RandomScoreNode(BaseTestNode):
     """
-    A node whicSh represents a random score.
+    A node which represents a random score.
     """
     def __init__(self, score, threshold=.5):
+        self.dependencies = []
         self.score = score
         self.threshold = threshold
 
-    def evaluate(self, data):
+    def evaluate(self,
+                 data: Optional[Dict] = None,
+                 history: Optional[Dict] = None):
         """
-        Random a score and return.
+        Random whether a full score should be returned.
         """
         if random.random() < self.threshold:
             return self.score
@@ -129,11 +163,14 @@ class SimpleTestNode(BaseTestNode):
     A node which represents a test.
     """
     def __init__(self, score, question_id, solution):
+        self.dependencies = []
         self.score = score
         self.question_id = question_id
         self.solution = solution
 
-    def evaluate(self, data):
+    def evaluate(self,
+                 data: Optional[Dict] = None,
+                 history: Optional[Dict] = None):
         """
         Check if the answer to the given question (identified by its ID)
         matches the expected solution.

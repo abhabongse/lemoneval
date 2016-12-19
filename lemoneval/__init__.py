@@ -3,10 +3,10 @@
 
 from .core import (
     BaseTestNode, ConstantNode, OperatorNode, RandomScoreNode, SimpleTestNode,
-    BaseEvaluator
+    Evaluator
     )
 
 __all__ = [
     'BaseTestNode', 'ConstantNode', 'OperatorNode', 'RandomScoreNode',
-    'SimpleTestNode', 'BaseEvaluator'
+    'SimpleTestNode', 'Evaluator'
     ]

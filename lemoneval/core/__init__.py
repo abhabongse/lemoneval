@@ -4,11 +4,11 @@
 from .graph import (
     BaseTestNode, ConstantNode, OperatorNode, RandomScoreNode, SimpleTestNode
     )
-from .evaluator import BaseEvaluator
+from .evaluator import Evaluator
 
 __all__ = [
     'BaseTestNode', 'ConstantNode', 'OperatorNode', 'RandomScoreNode',
     'SimpleTestNode',
 
-    'BaseEvaluator',
+    'Evaluator',
     ]
