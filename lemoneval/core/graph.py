@@ -24,6 +24,13 @@ class BaseTestNode(object):
         # history: a mapping from each computed node to score
         raise NotImplementedError
 
+    def run(self, data: Optional[Dict] = None):
+        """
+        Using this node as the root of the test suite tree, evaluate the
+        entire test with the given data.
+        """
+        return Grading(self, data)  # imported at the end to avoid circ.dep.
+
     def __add__(self, other):
         return OperatorNode(operator.add, self, other)
     def __radd__(self, other):
@@ -179,3 +186,7 @@ class SimpleTestNode(BaseTestNode):
             return self.score
         else:
             return 0
+
+
+# Import here to avoid circular dependencies
+from .evaluator import Grading
