@@ -6,8 +6,7 @@ import random
 from typing import Optional, Dict
 from numbers import Number
 
-
-class BaseTestNode(object):
+class BaseNode(object):
     """
     The base class for all test nodes. It overloads many different operators
     so that test cases can be composed to create a more complex test suite
@@ -15,7 +14,7 @@ class BaseTestNode(object):
     """
     def __init__(self):
         # List of nodes which should be evaluated before this node.
-        self.dependencies = []  # type: List[BaseTestNode]
+        self.dependencies = []  # type: List[BaseNode]
 
     def evaluate(self,
                  data: Optional[Dict] = None,
@@ -24,7 +23,7 @@ class BaseTestNode(object):
         # history: a mapping from each computed node to score
         raise NotImplementedError
 
-    def run(self, data: Optional[Dict] = None):
+    def run(self, data: Optional[Dict] = None) -> ('Grading'):
         """
         Using this node as the root of the test suite tree, evaluate the
         entire test with the given data.
@@ -101,7 +100,7 @@ class BaseTestNode(object):
         return OperatorNode(operator.inv, self)
 
 
-class ConstantNode(BaseTestNode):
+class ConstantNode(BaseNode):
     """
     The node which always evaluate to a constant.
     """
@@ -118,7 +117,7 @@ class ConstantNode(BaseTestNode):
         return self.value
 
 
-class OperatorNode(BaseTestNode):
+class OperatorNode(BaseNode):
     """
     A node which represents an operation on one or more test nodes.
     """
@@ -126,7 +125,7 @@ class OperatorNode(BaseTestNode):
         self.dependencies = []
         self.op = op
         for arg in args:
-            if isinstance(arg, BaseTestNode):
+            if isinstance(arg, BaseNode):
                 self.dependencies.append(arg)
             elif isinstance(arg, Number):
                 self.dependencies.append(ConstantNode(arg))
@@ -144,7 +143,7 @@ class OperatorNode(BaseTestNode):
         return self.op(*subscores)
 
 
-class LotteryNode(BaseTestNode):
+class LotteryNode(BaseNode):
     """
     A node which represents a random score.
     """
@@ -165,7 +164,7 @@ class LotteryNode(BaseTestNode):
             return 0
 
 
-class SimpleTestNode(BaseTestNode):
+class SimpleTestNode(BaseNode):
     """
     A node which represents a test.
     """
@@ -188,5 +187,31 @@ class SimpleTestNode(BaseTestNode):
             return 0
 
 
-# Import here to avoid circular dependencies
-from .evaluator import Grading
+class Grading(object):
+    """
+    An evaluation instance of Evaluator on a given data.
+    """
+    def __init__(self, graph: BaseNode, data: Optional[Dict] = None):
+        self.graph = graph
+        self.data = data
+        # This stores a mapping from each computed node to score
+        self.computed_node_scores = {}
+        # Traverse the node to evaluate the data.
+        self.traverse(graph)
+        self.final_score = self.computed_node_scores[graph]
+
+    def traverse(self, node: BaseNode):
+        # Check if the node has ever been visited
+        if node in self.computed_node_scores:
+            if self.computed_node_scores[node] is None:
+                raise ValueError('Test graph should not contain cycles.')
+            else:
+                return  # no need to recompute this node again
+
+        # Compute all dependencies first
+        for precursor in node.dependencies:
+            self.traverse(precursor)
+
+        # Evaluate the node itself and store the score
+        score = node.evaluate(self.data, self.computed_node_scores)
+        self.computed_node_scores[node] = score

@@ -1,11 +1,11 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
-from .graph import (
-    BaseTestNode, ConstantNode, OperatorNode, LotteryNode, SimpleTestNode
+from .testgraph import (
+    BaseNode, ConstantNode, OperatorNode, LotteryNode, SimpleTestNode
     )
 
 __all__ = [
-    'BaseTestNode', 'ConstantNode', 'OperatorNode', 'LotteryNode',
+    'BaseNode', 'ConstantNode', 'OperatorNode', 'LotteryNode',
     'SimpleTestNode',
     ]
