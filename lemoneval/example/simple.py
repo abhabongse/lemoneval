@@ -2,7 +2,7 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
-from lemoneval import BaseNode, SimpleTestNode, LotteryNode
+from lemoneval import BaseNode, SimpleTestNode, LotteryNode, BaseResult
 
 def is_equal(target_int):
     """
@@ -26,5 +26,5 @@ test_suite = sum(tests)  # type: BaseNode
 guesses = { i: input('Guess: ') for i in range(1, 6) }
 
 # Evaluate all guesses and obtain final score
-grading = test_suite.run(guesses)
-print(grading.final_score)
+result = BaseResult(test_suite, guesses)
+print(result.final_score)

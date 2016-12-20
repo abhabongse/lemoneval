@@ -4,6 +4,7 @@
 
 This module is self-contained and provides a building block to construct more
 complicated test suites.
+
 """
 
 import operator
@@ -45,22 +46,6 @@ class BaseNode(object):
 
         """
         raise NotImplementedError
-
-    def run(self, data: Optional[Dict] = None) -> ('GradingResult'):
-        """Evaluate the entire test suite with the given data.
-
-        Using this node as the root of the test suite tree structure,
-        evaluate the entire test suite tree with the given data.
-
-        Args:
-            data: External data to evaluate this test node
-
-        Returns:
-            An object of class `GradingResult` containing information about
-            the grading result.
-
-        """
-        return GradingResult(self, data)
 
     def __add__(self, other):
         return OperatorNode(operator.add, self, other)
@@ -229,58 +214,9 @@ class SimpleTestNode(BaseNode):
     def evaluate(self,
                  data: Optional[Dict] = None,
                  history: Optional[Dict] = None):
-        if self.test_id in data and self.predicate(data[self.test_id]):
+        if (data is not None
+                and self.test_id in data
+                and self.predicate(data[self.test_id])):
             return self.score
         else:
             return 0
-
-
-class GradingResult(object):
-    """Object which stores a evaluation history of a test suite.
-
-    Whenever a test is run with `run` method of test nodes, this object
-    is created to store all scores of each test in the tree and the final
-    score is also computed.
-
-    Attributes:
-        graph: Root of trees carrying all test nodes.
-        data: External data for test evaluations.
-        computed_node_scores: Dictionary mapping from nodes to computed scores.
-        final_score: Final score of test suite.
-
-    """
-    def __init__(self, graph: BaseNode, data: Optional[Dict] = None):
-        self.graph = graph
-        self.data = data
-        self.computed_node_scores = {}
-
-        # Traverse the node to evaluate the data.
-        self.traverse(graph)
-        self.final_score = self.computed_node_scores[graph]
-
-    def traverse(self, node: BaseNode):
-        """Evaluate and obtain scores for the specified node.
-
-        Args:
-            node: Current test node in consideration.
-
-        Raises:
-            ValueError: If the test suite tree contains a cycle.
-        """
-        # Check if the node has ever been visited
-        if node in self.computed_node_scores:
-            if self.computed_node_scores[node] is None:
-                raise ValueError('Test graph should not contain cycles.')
-            else:
-                return  # no need to recompute this node again
-
-        # Temporary value while the score is waited to be computed
-        self.computed_node_scores[node] = None
-
-        # Compute all dependencies first
-        for precursor in node.dependencies:
-            self.traverse(precursor)
-
-        # Evaluate the node itself and store the score
-        score = node.evaluate(self.data, self.computed_node_scores)
-        self.computed_node_scores[node] = score
