@@ -139,13 +139,13 @@ class ConstantNode(BaseNode):
 class OperatorNode(BaseNode):
     """A node which represents an operation on zero or more test nodes.
 
-    When this node is evaluated, the aggregrate scores is returned based
+    When this node is evaluated, the aggregate scores is returned based
     on scores of nodes in dependencies.
 
     Attributes:
         dependencies (`list` of `BaseNode`): Sequence of nodes whose scores
             will be combined through the specified function `op`.
-        op: Function which computes the aggregrate scores based on scores
+        op: Function which computes the aggregate scores based on scores
             of each node in dependencies
 
     """
@@ -220,3 +220,57 @@ class SimpleTestNode(BaseNode):
             return self.score
         else:
             return 0
+
+
+# Special aggregate functions.
+
+def tsum(expressions):
+    """Special sum operator for test nodes.
+
+    Args:
+        expressions: Sequence of test nodes, part of summand
+
+    Returns:
+        New test node which is the sum of all expressions
+
+    """
+    sum_op = lambda *exp: sum(exp)
+    return OperatorNode(sum_op, *expressions)
+
+
+def tmax(first, *rest):
+    """Special max operator for test nodes.
+
+    Args:
+        first: Either a single expression or a sequence of expressions.
+            For the latter case, `rest` must be empty (that is only one
+            argument is allowed in the function).
+        rest: Sequence of expressions, part of max argument.
+
+    Returns:
+        New test node which is the max of all expressions.
+
+    """
+    if rest:
+        return OperatorNode(max, first, *rest)
+    else:
+        return OperatorNode(max, *first)
+
+
+def tmin(first, *rest):
+    """Special min operator for test nodes.
+
+    Args:
+        first: Either a single expression or a sequence of expressions.
+            For the latter case, `rest` must be empty (that is only one
+            argument is allowed in the function).
+        rest: Sequence of expressions, part of min argument.
+
+    Returns:
+        New test node which is the min of all expressions.
+
+    """
+    if rest:
+        return OperatorNode(min, first, *rest)
+    else:
+        return OperatorNode(min, *first)
