@@ -15,9 +15,8 @@ from numbers import Number
 class BaseNode(object):
     """Base class for all test nodes.
 
-    It overloads many different operators
-    so that test cases can be composed to create a more complex test suite
-    tree structure.
+    It overloads many different operators so that test cases can be composed
+    to create a more complex test suite tree structure.
 
     Attributes:
         dependencies (`list` of `BaseNode`): Nodes which should be evaluated
@@ -171,10 +170,9 @@ class LotteryNode(BaseNode):
     """A node which represents a random score.
 
     Attributes:
-        dependencies (`list` of `BaseNode`): Sequence of nodes whose scores
-            will be combined through the specified function `op`.
         score: Score for this test node.
         threshold: Probability that full score is obtained, as opposed to 0.
+
     """
     def __init__(self, score, threshold=.5):
         self.dependencies = []
@@ -198,10 +196,9 @@ class SimpleTestNode(BaseNode):
     passes the specified `predicate`.
 
     Attributes:
-        dependencies (`list` of `BaseNode`): Sequence of nodes whose scores
-            will be combined through the specified function `op`.
         score: Score for this test node.
-        test_id: Key of external `data` dictionary.
+        test_id: Key of external `data` dictionary which will be the input
+            to the `predicate`.
         predicate: Boolean function which checks the input from external data.
 
     """
@@ -224,7 +221,7 @@ class SimpleTestNode(BaseNode):
 
 # Special aggregate functions.
 
-def tsum(expressions):
+def tsum(expressions) -> (OperatorNode):
     """Special sum operator for test nodes.
 
     Args:
@@ -238,7 +235,7 @@ def tsum(expressions):
     return OperatorNode(sum_op, *expressions)
 
 
-def tmax(first, *rest):
+def tmax(first, *rest) -> (OperatorNode):
     """Special max operator for test nodes.
 
     Args:
@@ -257,7 +254,7 @@ def tmax(first, *rest):
         return OperatorNode(max, *first)
 
 
-def tmin(first, *rest):
+def tmin(first, *rest) -> (OperatorNode):
     """Special min operator for test nodes.
 
     Args:
