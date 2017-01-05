@@ -8,7 +8,7 @@ from itertools import zip_longest
 from decimal import Decimal
 
 
-class BaseCheckScript(object):
+class BaseChecker(object):
     """Compares the output and solution files, byte-by-byte."""
 
     def __call__(self, full_score, input_fname, output_fname, solution_fname):
@@ -45,7 +45,7 @@ class BaseCheckScript(object):
         return filecmp.cmp(output_fname, solution_fname, shallow=False)
 
 
-class WordCheckScript(BaseCheckScript):
+class WordChecker(BaseChecker):
     """Compare the output and solution files, word-by-word."""
 
     def check_answer(self, input_fname, output_fname, solution_fname):
@@ -79,7 +79,7 @@ class WordCheckScript(BaseCheckScript):
                 )
 
 
-class ExternalCheckScript(BaseCheckScript):
+class ExternalChecker(BaseChecker):
     """Check the solution using external script.
 
     Attributes:

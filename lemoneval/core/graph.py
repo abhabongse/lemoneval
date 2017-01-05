@@ -23,8 +23,7 @@ class BaseNode(object):
             before this node.
 
     """
-    def __init__(self):
-        self.dependencies = []  # type: List[BaseNode]
+    dependencies = []
 
     def evaluate(self,
                  data: Optional[Dict] = None,
@@ -126,7 +125,6 @@ class ConstantNode(BaseNode):
 
     """
     def __init__(self, value):
-        self.dependencies = []
         self.value = value
 
     def evaluate(self,
@@ -175,7 +173,6 @@ class LotteryNode(BaseNode):
 
     """
     def __init__(self, score, threshold=.5):
-        self.dependencies = []
         self.score = score
         self.threshold = threshold
 
@@ -189,11 +186,12 @@ class LotteryNode(BaseNode):
             return 0
 
 
-class SimpleTestNode(BaseNode):
-    """A node which represents a simple test.
+class OutputPredicateTestNode(BaseNode):
+    """A node which represents a simple answer-only test.
 
-    It uses `test_id` as a key to obtain the external data and check if it
-    passes the specified `predicate`.
+    Each question is identified by `test_id` which is incidentally the key to
+    obtain the answers from external data. The answer is considered correct
+    if `predicate` evaluates to `True` on the output.
 
     Attributes:
         score: Score for this test node.
@@ -203,7 +201,6 @@ class SimpleTestNode(BaseNode):
 
     """
     def __init__(self, score, test_id, predicate):
-        self.dependencies = []
         self.score = score
         self.test_id = test_id
         self.predicate = predicate
@@ -215,6 +212,45 @@ class SimpleTestNode(BaseNode):
                 and self.test_id in data
                 and self.predicate(data[self.test_id])):
             return self.score
+        else:
+            return 0
+
+
+class FunctionalPredicateTestNode(BaseNode):
+    """A node which represents a simple functional test.
+
+    An input will be provided to the callable function as designated by
+    `func_id` key of the external data. The answer is considered correct
+    if `predicate` evaluates to `True` on the output.
+
+    Attributes:
+        score: Score for this test node.
+        func_id: Key of external `data` dictionary which will be the
+            callable function which expects an input.
+        test_input: Input data.
+        predicate: Boolean function which checks the input from external data.
+            It expects the output, the input
+
+    """
+    def __init__(self, score, func_id, test_input, predicate):
+        self.score = score
+        self.func_id = func_id
+        self.test_input = test_input
+        self.predicate = predicate
+
+    def evaluate(self,
+                 data: Optional[Dict] = None,
+                 history: Optional[Dict] = None):
+        if data is not None and self.func_id in data:
+            # Obtain function and evaluate the test input
+            func = data[self.func_id]
+            try:
+                output = func(test_input)
+            except:
+                passed = False  # function raises an exception
+            else:
+                passed = self.predicate(output)
+            return self.score if passed else 0
         else:
             return 0
 

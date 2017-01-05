@@ -2,18 +2,19 @@
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
 from .core import (
-    BaseNode, ConstantNode, OperatorNode, LotteryNode, SimpleTestNode,
+    BaseNode, ConstantNode, OperatorNode, LotteryNode,
+    OutputPredicateTestNode, FunctionalPredicateTestNode,
     tsum, tmax, tmin, BaseResult,
     )
 
-from .prog import (
-    EvaluateProgramNode, BaseCheckScript, WordCheckScript, ExternalCheckScript
+from .files import (
+    FunctionalFileTestNode, BaseChecker, WordChecker, ExternalChecker
     )
 
 __all__ = [
     'BaseNode', 'ConstantNode', 'OperatorNode', 'LotteryNode',
-    'SimpleTestNode', 'tsum', 'tmax', 'tmin', 'BaseResult',
+    'OutputPredicateTestNode', 'FunctionalPredicateTestNode',
+    'tsum', 'tmax', 'tmin', 'BaseResult',
 
-    'EvaluateProgramNode', 'BaseCheckScript', 'WordCheckScript',
-    'ExternalCheckScript'
+    'FunctionalFileTestNode', 'BaseChecker', 'WordChecker', 'ExternalChecker'
     ]
