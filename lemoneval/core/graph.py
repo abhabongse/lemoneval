@@ -9,7 +9,7 @@ complicated test suites.
 
 import operator
 import random
-from typing import Optional, Dict
+from typing import Optional, Dict, Sequence
 from numbers import Number
 
 class BaseNode(object):
@@ -23,11 +23,11 @@ class BaseNode(object):
             before this node.
 
     """
-    dependencies = []
+    dependencies: Sequence['BaseNode'] = []
 
     def evaluate(self,
                  data: Optional[Dict] = None,
-                 history: Optional[Dict] = None):
+                 dscores: Optional[Dict] = None):
         """Evaluate this test node with the given data.
 
         This method assumes that all nodes from `dependencies` attribute
@@ -37,7 +37,7 @@ class BaseNode(object):
 
         Args:
             data: External data to evaluate this test node.
-            history: Mapping from dependent test nodes to evaluated scores.
+            dscores: Mapping from dependent test nodes to evaluated scores.
 
         Returns:
             The computed score.
@@ -114,23 +114,44 @@ class BaseNode(object):
     def __invert__(self):
         return OperatorNode(operator.inv, self)
 
+    def make_node(self, value):
+        """Convert a value into an instance of `BaseNode` subclass type.
+
+        Args:
+            value: Value to convert to an instance of `BaseNode` subclass.
+
+        Returns:
+            If `value` is already a `BaseNode`, it is returned as-is.
+            If `value` is a number, it is wrapped inside `ConstantNode`
+                and returned.
+
+        Raises:
+            TypeError: If conditions under Return section is not satisfied.
+
+        """
+        if isinstance(value, BaseNode):
+            return value
+        elif isinstance(value, Number):
+            return ConstantNode(value)
+        else:
+            raise TypeError('Unsupported type in graph.')
+
 
 class ConstantNode(BaseNode):
-    """A node which represents a constant value.
+    """A node which represents a constant score.
 
     When this node is evaluated, the constant is returned as the score.
 
     Attributes:
-        value: Constant value
+        score: Constant score value
 
     """
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, score):
+        self.score = score
 
-    def evaluate(self,
-                 data: Optional[Dict] = None,
-                 history: Optional[Dict] = None):
-        return self.value
+    def evaluate(self, data: Optional[Dict] = None,
+                 dependent_scores: Optional[Dict] = None):
+        return self.score
 
 
 class OperatorNode(BaseNode):
@@ -150,17 +171,11 @@ class OperatorNode(BaseNode):
         self.dependencies = []
         self.op = op
         for arg in args:
-            if isinstance(arg, BaseNode):
-                self.dependencies.append(arg)
-            elif isinstance(arg, Number):
-                self.dependencies.append(ConstantNode(arg))
-            else:
-                raise TypeError('Unsupported type in graph.')
+            self.dependencies.append(self.make_node(arg))
 
-    def evaluate(self,
-                 data: Optional[Dict] = None,
-                 history: Optional[Dict] = None):
-        subscores = [ history[precursor] for precursor in self.dependencies ]
+    def evaluate(self, data: Optional[Dict] = None,
+                 dscores: Optional[Dict] = None):
+        subscores = [ dscores[prev] for prev in self.dependencies ]
         return self.op(*subscores)
 
 
@@ -176,9 +191,8 @@ class LotteryNode(BaseNode):
         self.score = score
         self.threshold = threshold
 
-    def evaluate(self,
-                 data: Optional[Dict] = None,
-                 history: Optional[Dict] = None):
+    def evaluate(self, data: Optional[Dict] = None,
+                 dscores: Optional[Dict] = None):
         sample = random.random()
         if sample < self.threshold:
             return self.score
@@ -205,9 +219,8 @@ class OutputPredicateTestNode(BaseNode):
         self.test_id = test_id
         self.predicate = predicate
 
-    def evaluate(self,
-                 data: Optional[Dict] = None,
-                 history: Optional[Dict] = None):
+    def evaluate(self, data: Optional[Dict] = None,
+                 dscores: Optional[Dict] = None):
         if (data is not None
                 and self.test_id in data
                 and self.predicate(data[self.test_id])):
@@ -238,9 +251,8 @@ class FunctionalPredicateTestNode(BaseNode):
         self.test_input = test_input
         self.predicate = predicate
 
-    def evaluate(self,
-                 data: Optional[Dict] = None,
-                 history: Optional[Dict] = None):
+    def evaluate(self, data: Optional[Dict] = None,
+                 dscores: Optional[Dict] = None):
         if data is not None and self.func_id in data:
             # Obtain function and evaluate the test input
             func = data[self.func_id]
@@ -255,7 +267,30 @@ class FunctionalPredicateTestNode(BaseNode):
             return 0
 
 
-# Special aggregate functions.
+#######################
+## Special functions ##
+#######################
+
+def ternary_if(if_expr, then_expr, else_expr) -> (OperatorNode):
+    """Special ternary if operator for three test nodes.
+
+    This node evaluates to `then_expr` if the evaluation of `if_expr` is True
+    as judge by `bool()`. Otherwise, this node evaluates to `else_expr`.
+
+    Note that both `then_expr` and `else_expr` are both evaluated internally
+    regardless of the truth value of `if_expr`.
+
+    Args:
+        if_expr: An conditional expression.
+        then_expr: A then-branch expression.
+        else_expr: An else-branch expression.
+
+    Returns:
+        New test node which is the ternary if expression of those three tests.
+    """
+    ite_op = lambda i, t, e: t if i else e
+    return OperatorNode(ite_op, if_expr, then_expr, else_expr)
+
 
 def tsum(expressions) -> (OperatorNode):
     """Special sum operator for test nodes.

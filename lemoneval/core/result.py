@@ -55,8 +55,8 @@ class BaseResult(object):
         self.computed_node_scores[node] = None
 
         # Compute all dependencies first
-        for precursor in node.dependencies:
-            self.traverse(precursor)
+        for prev in node.dependencies:
+            self.traverse(prev)
 
         # Evaluate the node itself and store the score
         score = node.evaluate(self.data, self.computed_node_scores)

@@ -4,7 +4,7 @@
 from .core import (
     BaseNode, ConstantNode, OperatorNode, LotteryNode,
     OutputPredicateTestNode, FunctionalPredicateTestNode,
-    tsum, tmax, tmin, BaseResult,
+    ternary_if, tsum, tmax, tmin, BaseResult,
     )
 
 from .files import (
@@ -14,7 +14,7 @@ from .files import (
 __all__ = [
     'BaseNode', 'ConstantNode', 'OperatorNode', 'LotteryNode',
     'OutputPredicateTestNode', 'FunctionalPredicateTestNode',
-    'tsum', 'tmax', 'tmin', 'BaseResult',
+    'ternary_if', 'tsum', 'tmax', 'tmin', 'BaseResult',
 
     'FunctionalFileTestNode', 'BaseChecker', 'WordChecker', 'ExternalChecker'
     ]
