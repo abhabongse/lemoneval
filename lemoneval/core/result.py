@@ -10,7 +10,7 @@ computational history may be kept within the object.
 """
 
 from typing import Optional, Dict
-from .graph import BaseNode
+from lemoneval.core.graph import BaseNode
 
 class BaseResult(object):
     """Object which stores a evaluation history of a test suite.

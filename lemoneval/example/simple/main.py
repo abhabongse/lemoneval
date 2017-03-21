@@ -2,7 +2,7 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
-from lemoneval import SimpleTestNode, LotteryNode, BaseResult, tsum
+from lemoneval import OutputPredicateTestNode, LotteryNode, BaseResult, tsum
 
 def is_equal(target_int):
     """
@@ -18,7 +18,7 @@ def is_equal(target_int):
 
 
 # Generate a few tests and combine them
-tests = [ SimpleTestNode(20, i, is_equal(i)) for i in range(1, 6) ]
+tests = [ OutputPredicateTestNode(20, i, is_equal(i)) for i in range(1, 6) ]
 tests.append(LotteryNode(50, 0.5))
 test_suite = tsum(tests)
 

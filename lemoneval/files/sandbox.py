@@ -7,7 +7,7 @@ multiple file types.
 
 """
 
-import os
+import pathlib
 import shutil
 import tempfile
 
@@ -18,11 +18,13 @@ class TemporarySandbox(object):
     Attributes:
         temp_dir: `TemporaryDirectory` object, whose `name` attribute contains
             a path to temporary directory
+        dir_path: `Path` object to temporary directory
         is_open: Boolean whether the temporary directory has been cleaned up
 
     """
     def __init__(self):
         self.temp_dir = tempfile.TemporaryDirectory()
+        self.dir_path = pathlib.Path(self.temp_dir.name)
         self.is_open = True
 
     def clean_up(self):
@@ -45,20 +47,21 @@ class TemporarySandbox(object):
     def __del__(self):
         self.clean_up()
 
-    def get_empty_file_location(self, path):
+    def get_file_location(self, file_path):
         """Get an absolute path to a placeholder using this sandbox as root.
 
         Args:
-            path: Relative path to a file placeholder.
+            file_path: Relative path to a file placeholder.
 
         Returns:
             The absolute path of the given file.
 
         """
-        assert(not os.path.isabs(path))
-        return os.path.join(self.temp_dir.name, path)
+        file_path = pathlib.Path(file_path)
+        assert(not file_path.is_absolute())
+        return self.dir_path.joinpath(file_path)
 
-    def get_file_from_src(self, src_path, dest_path):
+    def copy_file(self, src_path, dest_path):
         """Copy the file from a given source path and return absolute path.
 
         Args:
@@ -70,7 +73,7 @@ class TemporarySandbox(object):
             to the copied file inside this sandbox.
 
         """
-        assert(not os.path.isabs(dest_path))
-        dest_path = os.path.join(self.temp_dir.name, dest_path)
+        src_path = pathlib.Path(src_path)
+        dest_path = self.get_file_location(dest_path)
         shutil.copyfile(src_path, dest_path)
         return dest_path

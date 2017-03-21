@@ -13,8 +13,8 @@ def generate_input_solution_fnames(number):
     Generates a pair of input and solution file names in terms of absolute
     path in relation to the directory of this file, with the attached number.
     """
-    input_fname = os.path.join(this_dir, '{}.in'.format(number))
-    solution_fname = os.path.join(this_dir, '{}.sol'.format(number))
+    input_fname = os.path.join(this_dir, f'{number}.in')
+    solution_fname = os.path.join(this_dir, f'{number}.sol')
     return input_fname, solution_fname
 
 def prompt_solver(input_fname, output_fname):
@@ -24,7 +24,7 @@ def prompt_solver(input_fname, output_fname):
     """
     with open(input_fname) as fin:
         question = (fin.readline()).strip()
-    answer = input('{} + 1 = '.format(question))
+    answer = input(f'{question} + 1 = ')
     with open(output_fname, 'w') as fout:
         print(answer, file=fout)
     return True  # indicating that everything is okay

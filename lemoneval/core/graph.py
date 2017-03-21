@@ -212,12 +212,16 @@ class OutputPredicateTestNode(BaseNode):
         test_id: Key of external `data` dictionary which will be the input
             to the `predicate`.
         predicate: Boolean function which checks the input from external data.
+            In case it is not callable, it turns into the equality check to
+            the given predicate value.
 
     """
     def __init__(self, score, test_id, predicate):
         self.score = score
         self.test_id = test_id
-        self.predicate = predicate
+        self.predicate = (
+            predicate if callable(predicate) else lambda x: (x == predicate)
+            )
 
     def evaluate(self, data: Optional[Dict] = None,
                  dscores: Optional[Dict] = None):

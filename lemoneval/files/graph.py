@@ -1,9 +1,11 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
+import pathlib
 import os
+import tempfile
 from typing import Optional, Dict
-from .sandbox import TemporarySandbox
+from lemoneval.files.sandbox import TemporarySandbox
 from lemoneval.core.graph import BaseNode
 
 
@@ -23,39 +25,40 @@ class FunctionalFileTestNode(BaseNode):
 
     """
     def __init__(self, score, func_id, checker, input_fname, solution_fname):
+        input_fname = pathlib.Path(input_fname)
+        solution_fname = pathlib.Path(solution_fname)
+
+        if not (input_fname.is_absolute() and input_fname.exists()):
+            raise FileNotFoundError(f"Input file not exists: {input_fname}")
+        if not (solution_fname.is_absolute() and solution_fname.exists()):
+            raise FileNotFoundError(f"Solution file not exists: "
+                                    f"{solution_fname}")
+
         self.score = score
         self.func_id = func_id
         self.checker = checker
         self.input_fname = input_fname
         self.solution_fname = solution_fname
 
-        assert(os.path.isabs(input_fname)
-               and os.path.exists(input_fname))
-        assert(os.path.isabs(solution_fname)
-               and os.path.exists(solution_fname))
-
-    def evaluate(self,
-                 data: Optional[Dict] = None,
+    def evaluate(self, data: Optional[Dict] = None,
                  history: Optional[Dict] = None):
 
         # Create a temporary sandbox for intermediate file storage.
-        with TemporarySandbox() as sb:
-            input_fname = sb.get_file_from_src(self.input_fname, 'input.txt')
-            output_fname = sb.get_empty_file_location('output.txt')
+        with TemporarySandbox() as sandbox:
+            input_fname = sandbox.copy_file(self.input_fname, 'input.txt')
+            output_fname = sandbox.get_file_location('output.txt')
 
             # Obtain the callable function and run
-            if data is not None and self.func_id in data:
-                func = data[self.func_id]
-                try:
-                    func(input_fname, output_fname)
-                except:
-                    return 0
-                else:
-                    solution_fname = sb.get_file_from_src(
-                        self.solution_fname, 'solution.txt'
-                        )
-                    return self.checker(
-                        self.score, input_fname, output_fname, solution_fname
-                        )
-            else:
+            if data is None or self.func_id not in data:
                 return 0
+            func = data[self.func_id]
+            try:
+                func(input_fname, output_fname)
+            except:
+                return 0
+            solution_fname = sandbox.copy_file(
+                self.solution_fname, 'solution.txt'
+                )
+            return self.checker(
+                self.score, input_fname, output_fname, solution_fname
+                )

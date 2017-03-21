@@ -1,12 +1,12 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
-from .graph import (
+from lemoneval.core.graph import (
     BaseNode, ConstantNode, OperatorNode, LotteryNode,
     OutputPredicateTestNode, FunctionalPredicateTestNode,
     ternary_if, tsum, tmax, tmin
     )
-from .result import BaseResult
+from lemoneval.core.result import BaseResult
 
 __all__ = [
     'BaseNode', 'ConstantNode', 'OperatorNode', 'LotteryNode',
