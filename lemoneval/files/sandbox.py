@@ -75,5 +75,5 @@ class TemporarySandbox(object):
         """
         src_path = pathlib.Path(src_path)
         dest_path = self.get_file_location(dest_path)
-        shutil.copyfile(src_path, dest_path)
+        shutil.copy2(src_path, dest_path)
         return dest_path

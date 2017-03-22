@@ -22,9 +22,11 @@ class FunctionalFileTestNode(BaseNode):
             based on the input and solution clue.
         input_fname: Path to input file
         solution_fname: Path to solution clue file
+        time_limit: Seconds before timeout (default: 60 seconds)
 
     """
-    def __init__(self, score, func_id, checker, input_fname, solution_fname):
+    def __init__(self, score, func_id, checker, input_fname, solution_fname,
+                 time_limit=60):
         input_fname = pathlib.Path(input_fname)
         solution_fname = pathlib.Path(solution_fname)
 
@@ -39,6 +41,7 @@ class FunctionalFileTestNode(BaseNode):
         self.checker = checker
         self.input_fname = input_fname
         self.solution_fname = solution_fname
+        self.time_limit = time_limit
 
     def evaluate(self, data: Optional[Dict] = None,
                  history: Optional[Dict] = None):
@@ -53,8 +56,8 @@ class FunctionalFileTestNode(BaseNode):
                 return 0
             func = data[self.func_id]
             try:
-                func(input_fname, output_fname)
-            except:
+                func(input_fname, output_fname, self.time_limit)
+            except Exception as e:
                 return 0
             solution_fname = sandbox.copy_file(
                 self.solution_fname, 'solution.txt'
