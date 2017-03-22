@@ -1,12 +1,13 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
+"""Test node components extension for tests stored in files."""
 
 import pathlib
 import os
 import tempfile
 from typing import Optional, Dict
-from lemoneval.files.sandbox import TemporarySandbox
-from lemoneval.core.graph import BaseNode
+from .sandbox import TemporarySandbox
+from ..core.graph import BaseNode
 
 
 class FunctionalFileTestNode(BaseNode):

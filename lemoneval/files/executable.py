@@ -1,11 +1,13 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
+"""A Python class wrapper over an executable file."""
 
+import os
 import pathlib
 import shutil
 import subprocess
 import time
-from lemoneval.files.sandbox import TemporarySandbox
+from .sandbox import TemporarySandbox
 
 
 class Executable(object):
@@ -20,6 +22,8 @@ class Executable(object):
         exec_path = pathlib.Path(exec_path)
         if not (exec_path.is_absolute() and exec_path.exists()):
             raise FileNotFoundError(f"Executable file not exists: {exec_path}")
+        if not (os.access(exec_path, os.X_OK)):
+            raise PermissionError(f"File not executable: {exec_path}")
         self.exec_path = exec_path
 
     def __call__(self, input_fname, output_fname, time_limit=60):

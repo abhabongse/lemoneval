@@ -4,23 +4,35 @@
 
 import importlib.util
 import pathlib
-from lemoneval import BaseResult
-from lemoneval.files.executable import Executable
+from lemoneval import BaseResult, load_test, Executable
 
+# Load test suite
+this_dir = pathlib.Path(__file__).absolute().parent
+tests = load_test(this_dir.joinpath('tests', 'config.py'))
+
+##############
+## SOLVER 1 ##
+##############
 
 # Load solver as executable
-this_dir = pathlib.Path(__file__).absolute().parent
 solver = Executable(this_dir.joinpath('solver.py'))
 data = { 'program': solver }
 
-# Load test suite
-spec = importlib.util.spec_from_file_location(
-    'progtest.prog_2', this_dir.joinpath('tests', 'config.py')
-    )
-testconfig = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(testconfig)
-test_suite = testconfig.ROOT_TEST
+# Run the program and obtain the result
+result = BaseResult(tests, data)
+assert(result.final_score == 20)
+print('Should be 20:', result.final_score)
+
+##############
+## SOLVER 2 ##
+##############
+
+# Load wrong_solver as executable
+this_dir = pathlib.Path(__file__).absolute().parent
+solver = Executable(this_dir.joinpath('wrong_solver.py'))
+data = { 'program': solver }
 
 # Run the program and obtain the result
-result = BaseResult(test_suite, data)
-print(result.final_score)
+result = BaseResult(tests, data)
+assert(result.final_score == 10)
+print('Should be 10:', result.final_score)
