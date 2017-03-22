@@ -16,12 +16,14 @@ tests = load_test(this_dir.joinpath('tests', 'config.py'))
 
 # Load solver as executable
 solver = Executable(this_dir.joinpath('solver.py'))
-data = { 'program': solver }
+def prompter(input_data):
+    output_data = input(f'Type in "1" for "{input_data}": ')
+    return output_data
+data = { 'program': solver, 'function': prompter }
 
 # Run the program and obtain the result
 result = BaseResult(tests, data)
-assert(result.final_score == 20)
-print('Should be 20:', result.final_score)
+print('Total score:', result.final_score)
 
 ##############
 ## SOLVER 2 ##
@@ -34,5 +36,4 @@ data = { 'program': solver }
 
 # Run the program and obtain the result
 result = BaseResult(tests, data)
-assert(result.final_score == 10)
-print('Should be 10:', result.final_score)
+print('Total score:', result.final_score)

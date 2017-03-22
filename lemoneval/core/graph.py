@@ -253,7 +253,9 @@ class FunctionalPredicateTestNode(BaseNode):
         self.score = score
         self.func_id = func_id
         self.test_input = test_input
-        self.predicate = predicate
+        self.predicate = (
+            predicate if callable(predicate) else lambda x: (x == predicate)
+            )
 
     def evaluate(self, data: Optional[Dict] = None,
                  dscores: Optional[Dict] = None):
@@ -261,7 +263,7 @@ class FunctionalPredicateTestNode(BaseNode):
             # Obtain function and evaluate the test input
             func = data[self.func_id]
             try:
-                output = func(test_input)
+                output = func(self.test_input)
             except:
                 passed = False  # function raises an exception
             else:
@@ -294,6 +296,33 @@ def ternary_if(if_expr, then_expr, else_expr) -> (OperatorNode):
     """
     ite_op = lambda i, t, e: t if i else e
     return OperatorNode(ite_op, if_expr, then_expr, else_expr)
+
+
+def chains(first, second, *rest) -> (OperatorNode):
+    """Chain of tests that each test is contingent to the previous ones.
+
+    This node evaluates each test in sequence in a way that the evaluation of
+    each test node is contingent to the successful evaluation of the previous
+    test node. The total score will be the sum of scores up to the last
+    successful evaluation of a test node.
+
+    Args:
+        first: First test node expression
+        second: Second test node expression
+        rest: Sequence of test node expression succeeding the second one
+
+    Returns:
+        New test node which is the sum of all nodes with the given contingency
+        condition as described above.
+
+    """
+    if rest:
+        new_first, new_second = second, rest.pop(0)
+        next_node = contingent(new_first, new_second, rest)
+    else:
+        next_node = second
+    # TODO: add check condition to see if the returned score is full score
+    return ternary_if(new_first, new_first + next_node, 0)
 
 
 def tsum(expressions) -> (OperatorNode):

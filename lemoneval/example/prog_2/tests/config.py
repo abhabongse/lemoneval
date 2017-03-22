@@ -3,14 +3,33 @@
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
 import pathlib
-from lemoneval import FunctionalFileTestNode, WordChecker, tsum
+from lemoneval import (
+    FunctionalPredicateTestNode, FunctionalFileTestNode, WordChecker, tmin,
+    ternary_if
+    )
 
 check_script = WordChecker()
 this_dir = pathlib.Path(__file__).absolute().parent
-tests = [
+program_tests = [
     FunctionalFileTestNode(10, 'program', check_script,
                            this_dir.joinpath(f'test-{i}.in'),
                            this_dir.joinpath(f'test-{i}.sol'))
-    for i in (1, 2)
+    for i in ('1', '2', '3a', '3b')
+]
+written_tests = [
+    # The question id is the input, and the expected output is always '1'.
+    FunctionalPredicateTestNode(10, 'function', f'q{i}', '1')
+    for i in (1, 2, 3)
     ]
-ROOT_TEST = tsum(tests)
+
+ROOT_TEST = (
+    program_tests[0] + program_tests[1]
+    # Both '3a' and '3b' must be solved to obtain the score
+    + tmin(program_tests[2], program_tests[3])
+    # Score awarding is contingent to the previous correct answer. 
+    + written_tests[0] + ternary_if(written_tests[0],
+        written_tests[1] + ternary_if(written_tests[1],
+            written_tests[2],
+            0),
+        0)
+    )
