@@ -72,6 +72,7 @@ class FileProgramTestNode(BaseNode):
             solution_fname = sandbox.copy_file(
                 self.solution_fname, 'solution.txt'
                 )
-            result[self].success, result[self].score = self.checker(
-                self.full_score, input_fname, output_fname, solution_fname
+            self.checker(
+                result[self], self.full_score, input_fname, output_fname,
+                solution_fname
                 )

@@ -18,19 +18,20 @@ import subprocess
 class BaseChecker(object):
     """Compares the output and solution files, byte-by-byte."""
 
-    def __call__(self, full_score, input_fname, output_fname, solution_fname):
+    def __call__(self, node_result, full_score, input_fname, output_fname,
+                 solution_fname):
         """Use the solution file to check if the output it correct.
 
         Args:
+            node_result: `NodeResult` object to populate data
             full_score: Maximum score if the output is correct
             input_fname: Path to input file
             output_fname: Path to output file
             solution_fname: Path to solution file
 
-        Returns:
-            A tuple of `success` value and the obtained `score` where:
-            `success` is a number between 0 and 1
-            `score` is `full_score` or 0 depending on whether output is correct
+        Side-effect:
+            Attributes `success`, `score`, and `messages` of `node_result`
+            is populated appropriately.
 
         """
         input_fname = pathlib.Path(input_fname)
@@ -38,9 +39,8 @@ class BaseChecker(object):
         solution_fname = pathlib.Path(solution_fname)
 
         if self.check_answer(input_fname, output_fname, solution_fname):
-            return 1, full_score
-        else:
-            return 0, 0
+            node_result.success = 1
+            node_result.score = full_score
 
     def check_answer(self, input_fname, output_fname, solution_fname):
         """Compare output and solution files to see if they are identical.
@@ -103,18 +103,20 @@ class ExternalChecker(BaseChecker):
     def __init__(self, script_path):
         self.script_path = script_path
 
-    def __call__(self, full_score, input_fname, output_fname, solution_fname):
+    def __call__(self, node_result, full_score, input_fname, output_fname,
+                 solution_fname):
         """Use the solution file to check if the output it correct.
 
         Args:
+            node_result: `NodeResult` object to populate data
             full_score: Maximum score if the output is correct
             input_fname: Path to input file
             output_fname: Path to output file
             solution_fname: Path to solution file
 
-        Returns:
-            A tuple of `success` value and the obtained `score` which are the
-            output in the first and second line reported by external script
+        Side-effect:
+            Attributes `success`, `score`, and `messages` of `node_result`
+            is populated appropriately.
 
         """
         result = subprocess.run(
@@ -122,4 +124,5 @@ class ExternalChecker(BaseChecker):
              solution_fname], stdout=subprocess.PIPE
             )
         tokens = result.stdout.split('\n', 2)
-        return Decimal(tokens[0]), Decimal(tokens[1])
+        node_result.success = Decimal(tokens[0])
+        node_result.score = Decimal(tokens[1])
