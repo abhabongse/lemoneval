@@ -1,11 +1,18 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
+"""Collections of checker script to check if the output file is correct.
 
-import filecmp
-import os
-import subprocess
-from itertools import zip_longest
+Given a full score, an input file, an output, and a solution file (also called
+a checker hint file), checker determines if the output file is correct given
+the existence of input and solution files.
+
+"""
 from decimal import Decimal
+import filecmp
+from itertools import zip_longest
+import os
+import pathlib
+import subprocess
 
 
 class BaseChecker(object):
@@ -21,13 +28,19 @@ class BaseChecker(object):
             solution_fname: Path to solution file
 
         Returns:
-            `full_score` if the output is correct, 0 otherwise
+            A tuple of `success` value and the obtained `score` where:
+            `success` is a number between 0 and 1
+            `score` is `full_score` or 0 depending on whether output is correct
 
         """
+        input_fname = pathlib.Path(input_fname)
+        output_fname = pathlib.Path(output_fname)
+        solution_fname = pathlib.Path(solution_fname)
+
         if self.check_answer(input_fname, output_fname, solution_fname):
-            return full_score
+            return 1, full_score
         else:
-            return 0
+            return 0, 0
 
     def check_answer(self, input_fname, output_fname, solution_fname):
         """Compare output and solution files to see if they are identical.
@@ -100,12 +113,13 @@ class ExternalChecker(BaseChecker):
             solution_fname: Path to solution file
 
         Returns:
-            `full_score` if the output is correct, 0 otherwise
+            A tuple of `success` value and the obtained `score` which are the
+            output in the first and second line reported by external script
 
         """
         result = subprocess.run(
             [self.script_path, full_score, input_fname, output_fname,
              solution_fname], stdout=subprocess.PIPE
             )
-        stdout_lines = result.stdout.split('\n')
-        return Decimal(stdout_lines[0])
+        tokens = result.stdout.split('\n', 2)
+        return Decimal(tokens[0]), Decimal(tokens[1])

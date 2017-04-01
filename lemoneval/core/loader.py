@@ -3,10 +3,9 @@
 """A helper tool to load a test root from a python config file."""
 
 import importlib.util
+import pathlib
 from .graph import BaseNode
 
-# Counter to assign to unique test configuration import
-counter = 0
 
 def load_test(config_path):
     """Return the root of the test graph in the configuration file.
@@ -24,20 +23,21 @@ def load_test(config_path):
         TypeError: If ROOT_TEST is not of the type `BaseNode`
 
     """
-    global counter
-    spec = importlib.util.spec_from_file_location(
-        f'lemoneval.test_{counter}', config_path
-        )
-    counter += 1
+    config_path = pathlib.Path(config_path).absolute()
+    cleaned_config_path = str(config_path).replace('/', '_')
+    name = f"lemoneval.test_{cleaned_config_path}"
+    spec = importlib.util.spec_from_file_location(name, config_path)
     try:
         module = importlib.util.module_from_spec(spec)
     except AttributeError:
-        raise ModuleNotFoundError(f'No test module at path: {config_path}')
+        raise ModuleNotFoundError(f"no test module at path {config_path!r}")
     spec.loader.exec_module(module)
     try:
         root_test = module.ROOT_TEST
     except AttributeError:
-        raise ImportError(f'Test module has no ROOT_TEST: {config_path}')
+        raise ImportError(f"no ROOT_TEST in test module {config_path!r}")
     if not isinstance(root_test, BaseNode):
-        raise TypeError(f'ROOT_TEST has incorrect type: {config_path}')
+        raise TypeError(
+            f"ROOT_TEST has incorrect type in test module {config_path!r}"
+            )
     return root_test

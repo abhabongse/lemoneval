@@ -6,11 +6,12 @@ This module is self-contained and provides a building block to construct more
 complicated test suites.
 
 """
-
+from collections.abc import Callable
 import operator
 import random
-from typing import Optional, Dict, Sequence
 from numbers import Number
+from .descriptors import TypedDataDescriptor
+
 
 class BaseNode(object):
     """Base class for all test nodes.
@@ -18,20 +19,12 @@ class BaseNode(object):
     It overloads many different operators so that test cases can be composed
     to create a more complex test suite tree structure.
 
-    Attributes:
-        dependencies (`list` of `BaseNode`): Nodes which should be evaluated
-            before this node.
-
     """
-    dependencies: Sequence['BaseNode'] = []
-
-    def evaluate(self,
-                 data: Optional[Dict] = None,
-                 dscores: Optional[Dict] = None):
+    def evaluate(self, result, data):
         """Evaluate this test node with the given data.
 
-        This method assumes that all nodes from `dependencies` attribute
-        have already been evaluated and scores are already obtained.
+        This method should never be called directed. It is intended to be
+        called when the `Result` object is constructed.
 
         Subclass of `BaseNode` is expected to override this method.
 
@@ -39,8 +32,9 @@ class BaseNode(object):
             data: External data to evaluate this test node.
             dscores: Mapping from dependent test nodes to evaluated scores.
 
-        Returns:
-            The computed score.
+        Side-effect:
+            This method should populate attributes of data[self] such as
+            `success`, `scores`, and `messages`.
 
         """
         raise NotImplementedError
@@ -126,7 +120,7 @@ class BaseNode(object):
                 and returned.
 
         Raises:
-            TypeError: If conditions under Return section is not satisfied.
+            TypeError: If conditions under Return section is not satisfied
 
         """
         if isinstance(value, BaseNode):
@@ -134,150 +128,169 @@ class BaseNode(object):
         elif isinstance(value, Number):
             return ConstantNode(value)
         else:
-            raise TypeError('Unsupported type in graph.')
+            raise TypeError("unsupported type for {value!r} in test graph")
 
 
 class ConstantNode(BaseNode):
-    """A node which represents a constant score.
-
-    When this node is evaluated, the constant is returned as the score.
+    """A constant test score node.
 
     Attributes:
-        score: Constant score value
+        full_score: Constant score value
 
     """
-    def __init__(self, score):
-        self.score = score
+    full_score = TypedDataDescriptor(Number)
 
-    def evaluate(self, data: Optional[Dict] = None,
-                 dependent_scores: Optional[Dict] = None):
-        return self.score
+    def __init__(self, full_score):
+        self.full_score = full_score
+
+    def evaluate(self, result, data):
+        result[self].success = 1
+        result[self].score = self.full_score
 
 
 class OperatorNode(BaseNode):
-    """A node which represents an operation on zero or more test nodes.
+    """An operator node applying math operations on zero or more test nodes.
 
-    When this node is evaluated, the aggregate scores is returned based
-    on scores of nodes in dependencies.
+    The evaluated score of this node is the result of applying the operator
+    to scores of all evaluated operand.
 
     Attributes:
-        dependencies (`list` of `BaseNode`): Sequence of nodes whose scores
-            will be combined through the specified function `op`.
         op: Function which computes the aggregate scores based on scores
-            of each node in dependencies
+            of each node in the operand
+        operand (`list` of `BaseNode`): Sequence of nodes whose scores
+            will be combined through the specified function `op`
 
     """
-    def __init__(self, op, *args):
-        self.dependencies = []
-        self.op = op
-        for arg in args:
-            self.dependencies.append(self.make_node(arg))
+    op = TypedDataDescriptor(Callable)
 
-    def evaluate(self, data: Optional[Dict] = None,
-                 dscores: Optional[Dict] = None):
-        subscores = [ dscores[prev] for prev in self.dependencies ]
-        return self.op(*subscores)
+    def __init__(self, op, *args):
+        self.op = op
+        self.operand = [ self.make_node(arg) for arg in args ]
+
+    def evaluate(self, result, data):
+        subscores = [ result[op_node].score for op_node in self.operand ]
+        result[self].success = 1
+        result[self].score = self.op(*subscores)
 
 
 class LotteryNode(BaseNode):
-    """A node which represents a random score.
+    """A lottery node that awards score with some probability.
 
     Attributes:
-        score: Score for this test node.
-        threshold: Probability that full score is obtained, as opposed to 0.
+        full_score: Score for this test node
+        threshold: Probability that full score is obtained, as opposed to 0
 
     """
-    def __init__(self, score, threshold=.5):
-        self.score = score
+    full_score = TypedDataDescriptor(Number)
+    threshold = TypedDataDescriptor(Number, lambda x: 0 <= x <= 1)
+
+    def __init__(self, full_score, threshold=.5):
+        self.full_score = full_score
         self.threshold = threshold
 
-    def evaluate(self, data: Optional[Dict] = None,
-                 dscores: Optional[Dict] = None):
+    def evaluate(self, result, data):
         sample = random.random()
         if sample < self.threshold:
-            return self.score
-        else:
-            return 0
+            result[self].success = 1
+            result[self].score = self.full_score
+        result[self].messages['sample'] = sample
 
 
-class OutputPredicateTestNode(BaseNode):
-    """A node which represents a simple answer-only test.
+class AnswerOnlyTestNode(BaseNode):
+    """A test node which looks up an answer from the external data.
 
-    Each question is identified by `test_id` which is incidentally the key to
-    obtain the answers from external data. The answer is considered correct
-    if `predicate` evaluates to `True` on the output.
+    An answer to this test node is an external data identified by the
+    `answer_id` dictionary key.
+
+    The answer is considered correct if the given `predicate` evaluates the
+    answer to `True`. If `predicate` is not callable, it turns itself into
+    an equality check.
 
     Attributes:
-        score: Score for this test node.
-        test_id: Key of external `data` dictionary which will be the input
-            to the `predicate`.
-        predicate: Boolean function which checks the input from external data.
-            In case it is not callable, it turns into the equality check to
-            the given predicate value.
+        full_score: Score for this test node
+        answer_id: Dictionary key to an answer in external data
+        predicate: Boolean function which takes in the answer from external
+            data and evaluates its correctness. If not callable, then it turns
+            itself into an equality check callable.
 
     """
-    def __init__(self, score, test_id, predicate):
-        self.score = score
-        self.test_id = test_id
-        self.predicate = (
-            predicate if callable(predicate) else lambda x: (x == predicate)
-            )
+    full_score = TypedDataDescriptor(Number)
+    predicate = TypedDataDescriptor(Callable)
 
-    def evaluate(self, data: Optional[Dict] = None,
-                 dscores: Optional[Dict] = None):
-        if (data is not None
-                and self.test_id in data
-                and self.predicate(data[self.test_id])):
-            return self.score
+    def __init__(self, full_score, answer_id, predicate):
+        self.full_score = full_score
+        self.answer_id = answer_id
+        if callable(predicate):
+            self.predicate = predicate
         else:
-            return 0
+            self.predicate = lambda x: (x == predicate)
+
+    def evaluate(self, result, data):
+        try:
+            answer = data[self.answer_id]
+        except KeyError:
+            result[self].messages['lookup_error'] = "answer not provided"
+            return
+        if self.predicate(answer):
+            result[self].success = 1
+            result[self].score = self.full_score
+        result[self].messages['answer'] = answer
 
 
-class FunctionalPredicateTestNode(BaseNode):
-    """A node which represents a simple functional test.
+class ProgramTestNode(BaseNode):
+    """A test node which uses provided program to evaluate some input data.
 
-    An input will be provided to the callable function as designated by
-    `func_id` key of the external data. The answer is considered correct
-    if `predicate` evaluates to `True` on the output.
+    A program to this test node is a callable external data identified by the
+    `program_id` dictionary key.
+
+    The program is considered correct if the given `predicate` evaluates the
+    output of the program given `test_input` as the program input. If
+    `predicate` is not callable, it turns itself into an equality check.
 
     Attributes:
-        score: Score for this test node.
-        func_id: Key of external `data` dictionary which will be the
-            callable function which expects an input.
+        full_score: Score of this test node
+        program_id: Dictionary key to a callable program in external data
         test_input: Input data.
-        predicate: Boolean function which checks the input from external data.
-            It expects the output, the input
+        predicate: Boolean function which takes in the output from the program
+            from the external data given the `test_input` as the input, and
+            evaluates its correctness. If not callable, then it turns itself
+            into an equality check callable.
 
     """
-    def __init__(self, score, func_id, test_input, predicate):
-        self.score = score
-        self.func_id = func_id
-        self.test_input = test_input
-        self.predicate = (
-            predicate if callable(predicate) else lambda x: (x == predicate)
-            )
+    full_score = TypedDataDescriptor(Number)
+    predicate = TypedDataDescriptor(Callable)
 
-    def evaluate(self, data: Optional[Dict] = None,
-                 dscores: Optional[Dict] = None):
-        if data is not None and self.func_id in data:
-            # Obtain function and evaluate the test input
-            func = data[self.func_id]
-            try:
-                output = func(self.test_input)
-            except:
-                passed = False  # function raises an exception
-            else:
-                passed = self.predicate(output)
-            return self.score if passed else 0
+    def __init__(self, full_score, program_id, test_input, predicate):
+        self.full_score = full_score
+        self.program_id = program_id
+        self.test_input = test_input
+        if callable(predicate):
+            self.predicate = predicate
         else:
-            return 0
+            self.predicate = lambda x: (x == predicate)
+
+    def evaluate(self, result, data):
+        try:
+            program = data[self.program_id]
+        except KeyError:
+            result[self].messages['lookup_error'] = "program not provided"
+            return
+        try:
+            test_output = program(self.test_input)
+        except:
+            result[self].messages['runtime_error'] = "runtime error"
+            return
+        if self.predicate(test_output):
+            result[self].success = 1
+            result[self].score = self.full_score
+        result[self].messages['output'] = test_output
 
 
 #######################
 ## Special functions ##
 #######################
 
-def ternary_if(if_expr, then_expr, else_expr) -> (OperatorNode):
+def ternary_if(if_expr, then_expr, else_expr):
     """Special ternary if operator for three test nodes.
 
     This node evaluates to `then_expr` if the evaluation of `if_expr` is True
@@ -294,11 +307,12 @@ def ternary_if(if_expr, then_expr, else_expr) -> (OperatorNode):
     Returns:
         New test node which is the ternary if expression of those three tests.
     """
-    ite_op = lambda i, t, e: t if i else e
+    def ite_op(i, t, e):
+        return t if i else e
     return OperatorNode(ite_op, if_expr, then_expr, else_expr)
 
 
-def chains(first, second, *rest) -> (OperatorNode):
+def chains(first, second, *rest):
     """Chain of tests that each test is contingent to the previous ones.
 
     This node evaluates each test in sequence in a way that the evaluation of
@@ -325,7 +339,7 @@ def chains(first, second, *rest) -> (OperatorNode):
     return ternary_if(new_first, new_first + next_node, 0)
 
 
-def tsum(expressions) -> (OperatorNode):
+def node_sum(expressions):
     """Special sum operator for test nodes.
 
     Args:
@@ -339,7 +353,7 @@ def tsum(expressions) -> (OperatorNode):
     return OperatorNode(sum_op, *expressions)
 
 
-def tmax(first, *rest) -> (OperatorNode):
+def node_max(first, *rest):
     """Special max operator for test nodes.
 
     Args:
@@ -358,7 +372,7 @@ def tmax(first, *rest) -> (OperatorNode):
         return OperatorNode(max, *first)
 
 
-def tmin(first, *rest) -> (OperatorNode):
+def node_min(first, *rest):
     """Special min operator for test nodes.
 
     Args:

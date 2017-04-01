@@ -2,67 +2,76 @@
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 """Test node components extension for tests stored in files."""
 
+from numbers import Number
 import pathlib
 import os
 import tempfile
 from typing import Optional, Dict
+from .checker import BaseChecker
 from .sandbox import TemporarySandbox
+from .util import sanitize_file
 from ..core.graph import BaseNode
+from ..core.descriptors import TypedDataDescriptor
 
 
-class FunctionalFileTestNode(BaseNode):
-    """A node which runs a callable function against an input and check its
-    output. Input and solution clue files are stored on filesystem storage.
+class FileProgramTestNode(BaseNode):
+    """A test node which uses provided program to evaluate some input data
+    where input and solution hint files are stored on filesystem storage.
+
+    A program to this test node is a callable external data identified by the
+    `program_id` dictionary key.
+
+    The evaluation of the output by the program is done via `checker` object.
 
     Attributes:
-        score: Score for this test node.
-        func_id: Key of external `data` dictionary which will be the
-            callable function which expects an input filename and
-            an output filename.
-        checker: Object whose callable checks if the output is correct
-            based on the input and solution clue.
-        input_fname: Path to input file
-        solution_fname: Path to solution clue file
+        full_score: Score of this test node
+        program_id: Dictionary key to a callable program in external data
+        checker: Object whose callable checks if the output is correct based
+            on the input and solution clue
+        input_fname: Path to input data
+        solution_fname: Path to solution hint data
         time_limit: Seconds before timeout (default: 60 seconds)
 
     """
-    def __init__(self, score, func_id, checker, input_fname, solution_fname,
-                 time_limit=60):
-        input_fname = pathlib.Path(input_fname)
-        solution_fname = pathlib.Path(solution_fname)
+    full_score = TypedDataDescriptor(Number)
+    checker = TypedDataDescriptor(BaseChecker)
+    input_fname = TypedDataDescriptor(pathlib.Path)
+    solution_fname = TypedDataDescriptor(pathlib.Path)
+    time_limit = TypedDataDescriptor(Number, lambda x: x > 0)
 
-        if not (input_fname.is_absolute() and input_fname.exists()):
-            raise FileNotFoundError(f"Input file not exists: {input_fname}")
-        if not (solution_fname.is_absolute() and solution_fname.exists()):
-            raise FileNotFoundError(f"Solution file not exists: "
-                                    f"{solution_fname}")
+    def __init__(self, full_score, program_id, checker, input_fname,
+                 solution_fname, time_limit=60):
+        input_fname = sanitize_file(input_fname)
+        solution_fname = sanitize_file(solution_fname)
 
-        self.score = score
-        self.func_id = func_id
+        self.full_score = full_score
+        self.program_id = program_id
         self.checker = checker
         self.input_fname = input_fname
         self.solution_fname = solution_fname
         self.time_limit = time_limit
 
-    def evaluate(self, data: Optional[Dict] = None,
-                 history: Optional[Dict] = None):
-
+    def evaluate(self, result, data):
         # Create a temporary sandbox for intermediate file storage.
         with TemporarySandbox() as sandbox:
+            # Obtain progran from external data
+            try:
+                program = data[self.program_id]
+            except KeyError:
+                result[self].messages['lookup_error'] = "program not provided"
+                return
+            # Execute the program
             input_fname = sandbox.copy_file(self.input_fname, 'input.txt')
             output_fname = sandbox.get_file_location('output.txt')
-
-            # Obtain the callable function and run
-            if data is None or self.func_id not in data:
-                return 0
-            func = data[self.func_id]
             try:
-                func(input_fname, output_fname, self.time_limit)
-            except Exception as e:
-                return 0
+                program(input_fname, output_fname)
+            except:
+                result[self].messages['runtime_error'] = "runtime error"
+                return
+            # Check the output
             solution_fname = sandbox.copy_file(
                 self.solution_fname, 'solution.txt'
                 )
-            return self.checker(
-                self.score, input_fname, output_fname, solution_fname
+            result[self].success, result[self].score = self.checker(
+                self.full_score, input_fname, output_fname, solution_fname
                 )

@@ -1,13 +1,14 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
-"""A Python class wrapper over an executable file."""
-
+"""A Python wrapper over an executable file.
+"""
 import os
 import pathlib
 import shutil
 import subprocess
 import time
 from .sandbox import TemporarySandbox
+from .util import sanitize_file
 
 
 class Executable(object):
@@ -17,13 +18,11 @@ class Executable(object):
         exec_path: Path to executable file
 
     """
-
     def __init__(self, exec_path):
-        exec_path = pathlib.Path(exec_path)
-        if not (exec_path.is_absolute() and exec_path.exists()):
-            raise FileNotFoundError(f"Executable file not exists: {exec_path}")
+        exec_path = sanitize_file(exec_path)
         if not (os.access(exec_path, os.X_OK)):
-            raise PermissionError(f"File not executable: {exec_path}")
+            exec_path_str = str(exec_path)
+            raise PermissionError(f"file {exec_path_str!r} not executable")
         self.exec_path = exec_path
 
     def __call__(self, input_fname, output_fname, time_limit=60):
@@ -61,3 +60,5 @@ class Executable(object):
 
             # Copy the file back to the specified location.
             shutil.copy2(local_output_fname, output_fname)
+
+            # TODO: write report file into sandbox directory

@@ -2,21 +2,23 @@
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
 from .core import (
-    BaseNode, ConstantNode, OperatorNode, LotteryNode,
-    OutputPredicateTestNode, FunctionalPredicateTestNode,
-    ternary_if, tsum, tmax, tmin, load_test, BaseResult,
+    BaseNode, ConstantNode, OperatorNode, LotteryNode, AnswerOnlyTestNode,
+    ProgramTestNode,
+    ternary_if, chains, node_sum, node_max, node_min,
+    load_test, compute_result,
     )
 
 from .files import (
-    FunctionalFileTestNode, Executable,
+    FileProgramTestNode, Executable,
     BaseChecker, WordChecker, ExternalChecker
     )
 
-__all__ = [
+__all__ = (
     'BaseNode', 'ConstantNode', 'OperatorNode', 'LotteryNode',
-    'OutputPredicateTestNode', 'FunctionalPredicateTestNode',
-    'ternary_if', 'tsum', 'tmax', 'tmin', 'load_test', 'BaseResult',
+    'AnswerOnlyTestNode', 'ProgramTestNode',
+    'ternary_if', 'chains', 'node_sum', 'node_max', 'node_min',
+    'load_test', 'compute_result',
 
-    'FunctionalFileTestNode', 'Executable',
+    'FileProgramTestNode', 'Executable',
     'BaseChecker', 'WordChecker', 'ExternalChecker'
-    ]
+    )

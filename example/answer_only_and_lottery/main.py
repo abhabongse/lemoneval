@@ -2,7 +2,7 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
-from lemoneval import OutputPredicateTestNode, LotteryNode, BaseResult, tsum
+from lemoneval import AnswerOnlyTestNode, LotteryNode, compute_result, node_sum
 
 def is_equal(target_int):
     """
@@ -18,13 +18,13 @@ def is_equal(target_int):
 
 
 # Generate a few tests and combine them
-tests = [ OutputPredicateTestNode(20, i, is_equal(i)) for i in range(1, 6) ]
+tests = [ AnswerOnlyTestNode(20, i, is_equal(i)) for i in range(1, 6) ]
 tests.append(LotteryNode(50, 0.5))
-test_suite = tsum(tests)
+test_suite = node_sum(tests)
 
 # Obtain guesses from input prompt
 guesses = { i: input('Guess: ') for i in range(1, 6) }
 
 # Evaluate all guesses and obtain final score
-result = BaseResult(test_suite, guesses)
+result = compute_result(test_suite, guesses)
 print(result.final_score)

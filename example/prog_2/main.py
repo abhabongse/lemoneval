@@ -4,7 +4,7 @@
 
 import importlib.util
 import pathlib
-from lemoneval import BaseResult, load_test, Executable
+from lemoneval import compute_result, load_test, Executable
 
 # Load test suite
 this_dir = pathlib.Path(__file__).absolute().parent
@@ -22,7 +22,7 @@ def prompter(input_data):
 data = { 'program': solver, 'function': prompter }
 
 # Run the program and obtain the result
-result = BaseResult(tests, data)
+result = compute_result(tests, data)
 print('Total score:', result.final_score)
 
 ##############
@@ -35,5 +35,5 @@ solver = Executable(this_dir.joinpath('wrong_solver.py'))
 data = { 'program': solver }
 
 # Run the program and obtain the result
-result = BaseResult(tests, data)
+result = compute_result(tests, data)
 print('Total score:', result.final_score)

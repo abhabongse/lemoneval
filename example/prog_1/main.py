@@ -3,7 +3,9 @@
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
 import os
-from lemoneval import FunctionalFileTestNode, BaseResult, WordChecker, tsum
+from lemoneval import (
+    FileProgramTestNode, compute_result, WordChecker, node_sum
+    )
 
 check_script = WordChecker()
 this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -32,13 +34,13 @@ def prompt_solver(input_fname, output_fname):
 
 # Generate a few tests and combine them.
 tests = [
-    FunctionalFileTestNode(10, 'program', check_script,
+    FileProgramTestNode(10, 'program', check_script,
                            *generate_input_solution_fnames(i))
     for i in (1, 2)
     ]
-test_suite = tsum(tests)
+test_suite = node_sum(tests)
 
 # Solve the test and obtain the result.
 data = { 'program': prompt_solver }
-result = BaseResult(test_suite, data)
+result = compute_result(test_suite, data)
 print(result.final_score)
