@@ -173,6 +173,34 @@ class OperatorNode(BaseNode):
         result[self].score = self.op(*subscores)
 
 
+class TernaryIfNode(BaseNode):
+    """Special ternary if operator for three test nodes.
+
+    This node evaluates to `then_expr` if the evaluation of `if_expr` is True
+    as judged by `bool()`. Otherwise, this node evaluates to `else_expr`.
+
+    Note that the other branch will not be evaluated (at least not directly).
+
+    Attributes:
+        if_expr: An conditional expression.
+        then_expr: A then-branch expression.
+        else_expr: An else-branch expression.
+
+    """
+    def __init__(self, if_expr, then_expr, else_expr):
+        self.if_expr = self.make_node(if_expr)
+        self.then_expr = self.make_node(then_expr)
+        self.else_expr = self.make_node(else_expr)
+
+    def evaluate(self, result, data):
+        if result[self.if_expr].score:
+            result[self].success = result[self.then_expr].success
+            result[self].score = result[self.then_expr].score
+        else:
+            result[self].success = result[self.else_expr].success
+            result[self].score = result[self.else_expr].score
+
+
 class LotteryNode(BaseNode):
     """A lottery node that awards score with some probability.
 
@@ -290,28 +318,6 @@ class ProgramTestNode(BaseNode):
 ## Special functions ##
 #######################
 
-def ternary_if(if_expr, then_expr, else_expr):
-    """Special ternary if operator for three test nodes.
-
-    This node evaluates to `then_expr` if the evaluation of `if_expr` is True
-    as judge by `bool()`. Otherwise, this node evaluates to `else_expr`.
-
-    Note that both `then_expr` and `else_expr` are both evaluated internally
-    regardless of the truth value of `if_expr`.
-
-    Args:
-        if_expr: An conditional expression.
-        then_expr: A then-branch expression.
-        else_expr: An else-branch expression.
-
-    Returns:
-        New test node which is the ternary if expression of those three tests.
-    """
-    def ite_op(i, t, e):
-        return t if i else e
-    return OperatorNode(ite_op, if_expr, then_expr, else_expr)
-
-
 def chains(first, second, *rest):
     """Chain of tests that each test is contingent to the previous ones.
 
@@ -331,12 +337,12 @@ def chains(first, second, *rest):
 
     """
     if rest:
-        new_first, new_second = second, rest.pop(0)
-        next_node = contingent(new_first, new_second, rest)
+        new_first = second
+        new_second, *new_rest = rest
+        next_node = chains(new_first, new_second, *new_rest)
     else:
         next_node = second
-    # TODO: add check condition to see if the returned score is full score
-    return ternary_if(new_first, new_first + next_node, 0)
+    return TernaryIfNode(first, first + next_node, 0)
 
 
 def node_sum(expressions):

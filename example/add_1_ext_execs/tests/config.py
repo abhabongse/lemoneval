@@ -5,7 +5,7 @@
 import pathlib
 from lemoneval import (
     ProgramTestNode, FileProgramTestNode, WordChecker, node_min,
-    ternary_if
+    chains
     )
 
 check_script = WordChecker()
@@ -27,9 +27,5 @@ ROOT_TEST = (
     # Both '3a' and '3b' must be solved to obtain the score
     + node_min(program_tests[2], program_tests[3])
     # Score awarding is contingent to the previous correct answer.
-    + written_tests[0] + ternary_if(written_tests[0],
-        written_tests[1] + ternary_if(written_tests[1],
-            written_tests[2],
-            0),
-        0)
+    + chains(*written_tests)
     )
