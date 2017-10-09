@@ -1,2 +1,3 @@
 # lemoneval
-Just another grader for programming assignments and contests.
+
+Academic exercises structural configuration schemer.
