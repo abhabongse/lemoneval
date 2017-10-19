@@ -18,7 +18,7 @@ class FiveChoicesFramework(BaseFramework):
 
     question = field.TextField()   # question text
     answer = field.IntegerField()  # index to the right choice
-    score = field.IntegerField()   # score of this question
+    score = field.PositiveIntegerField()   # score of this question
 
     choice_a = field.TextField()   # choice a
     choice_b = field.TextField()   # choice b
@@ -32,8 +32,4 @@ class FiveChoicesFramework(BaseFramework):
             raise ValueError(
                 f"index for correct answer must be between 0 and "
                 f"{len(self.choices)-1} but given: {self.answer!r}"
-            )
-        if not self.score > 0:
-            raise ValueError(
-                f"expecting a positive score but given: {self.score!r}"
             )
