@@ -2,13 +2,13 @@
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
 from .base import BaseFramework
-from . import field
+from . import parameter
 
 
 class FiveChoicesFramework(BaseFramework):
     """Multiple choice question framework with 1 correct answer out of 5.
 
-    Fields:
+    parameters:
         question: Question text
         answer: The 0-index of the correct answer
         score: Positive value score
@@ -16,15 +16,15 @@ class FiveChoicesFramework(BaseFramework):
             Choice text for each of the 5 choices.
     """
 
-    question = field.TextField()   # question text
-    answer = field.IntegerField()  # index to the right choice
-    score = field.PositiveIntegerField()   # score of this question
+    question = parameter.TextParameter()   # question text
+    answer = parameter.IntegerParameter()  # index to the right choice
+    score = parameter.PositiveIntegerParameter()   # score of this question
 
-    choice_a = field.TextField()   # choice a
-    choice_b = field.TextField()   # choice b
-    choice_c = field.TextField()   # choice c
-    choice_d = field.TextField()   # choice d
-    choice_e = field.TextField()   # choice e
+    choice_a = parameter.TextParameter()   # choice a
+    choice_b = parameter.TextParameter()   # choice b
+    choice_c = parameter.TextParameter()   # choice c
+    choice_d = parameter.TextParameter()   # choice d
+    choice_e = parameter.TextParameter()   # choice e
     choices = [choice_a, choice_b, choice_c, choice_d, choice_e]
 
     def framework_validate(self):
