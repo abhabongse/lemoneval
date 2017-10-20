@@ -1,11 +1,9 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
-from .base import BaseFramework
-from . import parameter
+from ..backbone import framework, parameter
 
-
-class FiveChoicesFramework(BaseFramework):
+class FiveChoicesFramework(framework.BaseFramework):
     """Multiple choice question framework with 1 correct answer out of 5.
 
     parameters:
