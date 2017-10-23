@@ -1,8 +1,6 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
-from numbers import Real
-
 class BaseParameter(object):
     """Parameter descriptor for framework classes.
 
@@ -13,25 +11,24 @@ class BaseParameter(object):
     It uses __dict__ of the host instance to store the actual data.
     """
 
-    def __set_name__(self, owner, parameter_name):
-        from .framework import BaseFramework
-        if not issubclass(owner, BaseFramework):
-            raise TypeError(
-                f"parameter {parameter_name} should have been defined in "
-                f"subclasses of BaseFramework"
-            )
-        self.parameter_name = parameter_name
+    __slots__ = ("name",)
+
+    def __init__(self, *, name=None):
+        self.name = name
+
+    def __set_name__(self, owner, name):
+        self.name = self.name or name
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        return instance.__dict__[self.parameter_name]
+        return instance.__dict__[self.name]
 
     def __set__(self, instance, value):
-        if self.parameter_name in instance.__dict__ :
+        if self.name in instance.__dict__ :
             raise AttributeError("reassigning parameter is not allowed")
         self.parameter_validate(value)
-        instance.__dict__[self.parameter_name] = value
+        instance.__dict__[self.name] = value
 
     def __delete__(self, instance):
         raise AttributeError("deleting parameter is not allowed")
@@ -48,46 +45,47 @@ class BaseParameter(object):
         pass
 
 
-class TextParameter(BaseParameter):
-    """Text parameter descriptor for exercise framework."""
+class Parameter(BaseParameter):
+    """Single-value parameter descriptor for exercise framework."""
+
+    __slots__ = ("dtype", "validators")
+
+    def __init__(self, *, dtype=object, name=None):
+        self.dtype = dtype  # expected type of parameter
+        self.validators = []
+        super().__init__(name=name)
+
+    def add_validators(self, *validators):
+        """Attach a sequence of validators to the parameter. Each validator
+        will be run against a single value argument when it is assigned to the
+        parameter.
+
+        A validator could be an object of BaseValidator type or any callable
+        which expects one value argument. If the value is considered valid by
+        the validator, then it should return True. Otherwise, it should either
+        return False or raise an exception describing what went wrong.
+        """
+        from .validator import BaseValidator, PredicateValidator
+        for validator in validators:
+            if isinstance(validator, BaseValidator):
+                self.validators.append(validator)
+            elif callable(validator):
+                self.validators.append(PredicateValidator(validator))
+            else:
+                alien = getattr(validator, "__qualname__", validator)
+                raise TypeError(
+                    f"expected a validator but {alien} was given"
+                )
 
     def parameter_validate(self, value):
-        if not isinstance(value, str):
+        if not isinstance(value, self.dtype):
+            dtype = getattr(self.dtype, "__qualname__", self.dtype)
             raise TypeError(
-                f"expecting a string for the parameter "
-                f"{self.parameter_name}, but instead given: {value!r}"
+                f"expecting value type '{dtype}' for the parameter "
+                f"'{self.name}' but {value!r} is given"
             )
-
-
-class NumberParameter(BaseParameter):
-    """Generic (real) number parameter descriptor for exercise framework."""
-
-    def parameter_validate(self, value):
-        if not isinstance(value, Real):
-            raise TypeError(
-                f"expecting a real number for the parameter "
-                f"{self.parameter_name}, but instead given: {value!r}"
-            )
-
-
-class IntegerParameter(BaseParameter):
-    """Integer parameter descriptor for exercise framework."""
-
-    def parameter_validate(self, value):
-        if not isinstance(value, int):
-            raise TypeError(
-                f"expecting an integer for the parameter "
-                f"{self.parameter_name}, but instead given: {value!r}"
-            )
-
-
-class PositiveIntegerParameter(IntegerParameter):
-    """Positive integer parameter descriptor for exercise framework."""
-
-    def parameter_validate(self, value):
-        super().parameter_validate(value)
-        if not value > 0:
-            raise ValueError(
-                f"integer must be positive for the parameter "
-                f"{self.parameter_name}, but instead given: {value!r}"
-            )
+        for validator in self.validators:
+            if not validator(value, self.name):
+                raise ValueError(
+                    f"the given value {value!r} failed the validation"
+                )

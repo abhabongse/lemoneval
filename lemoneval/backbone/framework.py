@@ -41,7 +41,7 @@ class BaseFramework(object, metaclass=framework_builder):
         """
         for name in self.parameter_names:
             if name not in parameters:
-                raise ValueError(f"missing parameter: {name}")
+                raise ValueError(f"missing parameter '{name}'")
             setattr(self, name, parameters[name])
 
     def framework_validate(self):
