@@ -25,10 +25,9 @@ class BaseParameter(object):
         return instance.__dict__[self.name]
 
     def __set__(self, instance, value):
-        if self.name in instance.__dict__ :
+        if self.name in instance.__dict__:
             raise AttributeError("reassigning parameter is not allowed")
-        self.parameter_validate(value)
-        instance.__dict__[self.name] = value
+        instance.__dict__[self.name] = self.parameter_validate(value)
 
     def __delete__(self, instance):
         raise AttributeError("deleting parameter is not allowed")
@@ -42,7 +41,7 @@ class BaseParameter(object):
         This method produces no result when the validation is successful;
         otherwise, it raises an exception describing what went wrong.
         """
-        pass
+        return value
 
 
 class Parameter(BaseParameter):
@@ -81,11 +80,118 @@ class Parameter(BaseParameter):
         if not isinstance(value, self.dtype):
             dtype = getattr(self.dtype, "__qualname__", self.dtype)
             raise TypeError(
-                f"expecting value type '{dtype}' for the parameter "
-                f"'{self.name}' but {value!r} is given"
+                f"expecting value type '{dtype}' for '{self.name}' but "
+                f"{value!r} is given"
             )
         for validator in self.validators:
             if not validator(value, self.name):
                 raise ValueError(
-                    f"the given value {value!r} failed the validation"
+                    f"the given value {value!r} failed the validation "
+                    f"for '{self.name}'"
                 )
+        return value
+
+
+class SequenceParameter(Parameter):
+    """Sequence of parameters descriptor for exercise framework.
+
+    This is similar to Parameter, except that it is a sequence of values
+    rather than a single value.
+
+    Lower bound and upper bound lengths (denoted as 'lb_length' and
+    'ub_length' respectively) can be provided through the keyword 'length'
+    to limit the length of sequence in this parameter. The 'length' could
+    be specified as a single integer (meaning the sequence has such fixed
+    length), or an iterable of size 1 or 2. In this latter case, the first
+    and the second integer of the iterable provides the lower bound and the
+    upper bound limit on the sequence length, respectively. If the second
+    integer is missing, then there is no upper bound limit.
+    """
+
+    __slots__ = ("lb_length", "ub_length")
+
+    def __init__(self, *, length=(0,), dtype=object, name=None):
+        self.lb_length, self.ub_length = self._resolve_lengths(length)
+        super().__init__(dtype=dtype, name=name)
+
+    def parameter_validate(self, values):
+        try:
+            length = len(values); values = tuple(values)
+        except TypeError as e:
+            e.args += (
+                f"the values for '{self.name}' must be an iterable of finite "
+                f"length",
+            )
+            raise
+        if not self.lb_length <= length <= self.ub_length:
+            if self.lb_length == self.ub_length:
+                raise ValueError(
+                    f"expecting '{self.name}' of length {self.lb_length} but "
+                    f"one of length {length} was given"
+                )
+            import math
+            if self.ub_length == math.inf:
+                raise ValueError(
+                    f"expecting '{self.name}' of length at least "
+                    f"{self.lb_length} but one of length {length} was given"
+                )
+            raise ValueError(
+                f"expecting '{self.name}' of length between {self.lb_length} "
+                f"and {self.ub_length} but one of length {length} was given"
+            )
+        for index, value in enumerate(values):
+            if not isinstance(value, self.dtype):
+                dtype = getattr(self.dtype, "__qualname__", self.dtype)
+                raise TypeError(
+                    f"expecting value type '{dtype}' for '{self.name}' but "
+                    f"{value!r} (index: {index}) is given"
+                )
+            for validator in self.validators:
+                if not validator(value, self.name):
+                    raise ValueError(
+                        f"the given value {value!r} (index: {index}) failed "
+                        f"the validation for '{self.name}'"
+                    )
+        return values
+
+    @staticmethod
+    def _resolve_lengths(length):
+        import math
+        if isinstance(length, int):
+            if length < 0:
+                raise ValueError(
+                    f"'length' should be a non-negative interger but "
+                    f"{length} is given"
+                )
+            return length, length
+        try:
+            size = len(length); length = tuple(length)
+        except TypeError as e:
+            e.args += (
+                f"'length' must be an integer or an iterable of one or two "
+                f"integers",
+            )
+            raise
+        if not 1 <= len(length) <= 2:
+            raise ValueError(
+                f"expected an iterable 'length' of size 1 or 2, but one of "
+                f"size {size} was given"
+            )
+        if not all(isinstance(l, int) for l in length):
+            raise TypeError(
+                f"lower & upper bound limit of 'length' must be "
+                f"integers but {length} was given"
+            )
+        if length[0] < 0:
+            raise ValueError(
+                f"lower bound of 'length' should be a non-negative "
+                f"interger but {length[0]} is given"
+            )
+        if len(length) == 1:
+            return length[0], math.inf
+        if length[0] > length[1]:
+            raise ValueError(
+                f"lower bound of 'length' cannot be greater than upper bound "
+                f"but {length} were given"
+            )
+        return length
