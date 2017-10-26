@@ -9,10 +9,16 @@ class framework_builder(type):
             # meaning: cls is not subclass of BaseFramework
             return super().__new__(cls, clsname, bases, clsdict)
         from .parameter import BaseParameter
-        clsdict['parameter_names'] = tuple(
-            name for name, descriptor in clsdict.items()
-            if isinstance(descriptor, BaseParameter)
-        )
+        parameter_names = []
+        for name, descriptor in clsdict.items():
+            if isinstance(descriptor, BaseParameter):
+                if name.startswith("_"):
+                    raise NameError(
+                        f"parameter names should not begin with an underscore "
+                        f"but the name {name!r} is used"
+                    )
+                parameter_names.append(name)
+        clsdict['_parameter_names'] = tuple(parameter_names)
         clsobj = super().__new__(cls, clsname, bases, clsdict)
         return clsobj
 
@@ -25,26 +31,26 @@ class BaseFramework(object, metaclass=framework_builder):
     """
 
     def __init__(self, **parameters):
-        self.set_parameters(parameters)
-        self.framework_validate()
+        self._set_parameters(parameters)
+        self._framework_validate()
 
     def __repr__(self):
         parameters_text = ",\n".join(
             f"    {name}={getattr(self, name)!r}"
-            for name in self.parameter_names
+            for name in self._parameter_names
         )
         return f"{type(self).__qualname__}(\n{parameters_text}\n)"
 
-    def set_parameters(self, parameters):
+    def _set_parameters(self, parameters):
         """Check that all expected parameters are provided and store them.
         Excessive unwanted parameters will be ignored.
         """
-        for name in self.parameter_names:
+        for name in self._parameter_names:
             if name not in parameters:
                 raise ValueError(f"missing parameter '{name}'")
             setattr(self, name, parameters[name])
 
-    def framework_validate(self):
+    def _framework_validate(self):
         """Framework-level validation: to be overriden by subclasses.
 
         This method is called once all parameter-level values are assigned and

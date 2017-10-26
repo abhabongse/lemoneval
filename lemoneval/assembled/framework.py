@@ -18,9 +18,13 @@ class FiveChoicesFramework(framework.BaseFramework):
     choices = parameter.SequenceParameter(dtype=str, length=5)   # choices
     answer = parameter.Parameter(dtype=int)    # index to the right choice
     score = parameter.Parameter(dtype=int)     # score of this question
-    score.add_validators(lambda x: x > 0)
+    @score.add_validators
+    def positive_score(score):
+        if score <= 0:
+            raise ValueError("'score' should be positive")
+        return True
 
-    def framework_validate(self):
+    def _framework_validate(self):
         if not 0 <= self.answer < len(self.choices):
             raise ValueError(
                 f"the index for correct answer must be between 0 and "
