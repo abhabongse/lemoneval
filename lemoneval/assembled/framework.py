@@ -19,10 +19,10 @@ class FiveChoicesFramework(framework.BaseFramework):
     score = parameter.Parameter(dtype=int)     # score of this question
     @score.add_validators
     def positive_score(score):
-        if score <= 0:
-            raise ValueError("'score' should be positive")
-        return True
-
+        if score > 0:
+            return True
+        raise ValueError("'score' should be positive")
+        
     def _framework_validate(self):
         if not 0 <= self.answer < len(self.choices):
             raise ValueError(
