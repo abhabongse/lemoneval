@@ -18,7 +18,7 @@ class framework_builder(type):
                         f"but the name {name!r} is used"
                     )
                 parameter_names.append(name)
-        clsdict['_parameter_names'] = tuple(parameter_names)
+        clsdict['parameter_names'] = tuple(parameter_names)
         clsobj = super().__new__(cls, clsname, bases, clsdict)
         return clsobj
 
@@ -31,26 +31,33 @@ class BaseFramework(object, metaclass=framework_builder):
     """
 
     def __init__(self, **parameters):
-        self._set_parameters(parameters)
-        self._framework_validate()
+        self.set_parameters(parameters)
+        self.framework_validate()
 
     def __repr__(self):
         parameters_text = ",\n".join(
-            f"    {name}={getattr(self, name)!r}"
-            for name in self._parameter_names
+            f"  {name}={getattr(self, name)!r}"
+            for name in self.parameter_names
         )
         return f"{type(self).__qualname__}(\n{parameters_text}\n)"
 
-    def _set_parameters(self, parameters):
+    @property
+    def jsonable_class(self):
+        """The framework defines this property so that it can be serializable
+        with JSON (see lemoneval.util.json package).
+        """
+        return type(self).__qualname__
+
+    def set_parameters(self, parameters):
         """Check that all expected parameters are provided and store them.
         Excessive unwanted parameters will be ignored.
         """
-        for name in self._parameter_names:
+        for name in self.parameter_names:
             if name not in parameters:
                 raise ValueError(f"missing parameter '{name}'")
             setattr(self, name, parameters[name])
 
-    def _framework_validate(self):
+    def framework_validate(self):
         """Framework-level validation: to be overriden by subclasses.
 
         This method is called once all parameter-level values are assigned and
@@ -61,3 +68,10 @@ class BaseFramework(object, metaclass=framework_builder):
         otherwise, it raises an exception describing what went wrong.
         """
         pass
+
+    def create_session(self):
+        """When a player is attempted at the exercise, a session for the
+        exercise framework must be created with this method.
+        """
+        from .session import Session
+        return Session(self)

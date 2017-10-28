@@ -22,8 +22,8 @@ class FiveChoicesFramework(framework.BaseFramework):
         if score > 0:
             return True
         raise ValueError("'score' should be positive")
-        
-    def _framework_validate(self):
+
+    def framework_validate(self):
         if not 0 <= self.answer < len(self.choices):
             raise ValueError(
                 f"the index for correct answer must be between 0 and "
