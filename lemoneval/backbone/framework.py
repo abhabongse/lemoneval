@@ -29,8 +29,9 @@ class BaseFramework(object, metaclass=framework_builder):
     Caution: Parameter values will be written to the __dict__ of the instance
     object. Please do not meddle with __dict__ itself like a responsible user.
     """
+    serializable_to_json = ...
 
-    def __init__(self, **parameters):
+    def __init__(self, *args, **parameters):
         self.set_parameters(parameters)
         self.framework_validate()
 
@@ -40,13 +41,6 @@ class BaseFramework(object, metaclass=framework_builder):
             for name in self.parameter_names
         )
         return f"{type(self).__qualname__}(\n{parameters_text}\n)"
-
-    @property
-    def jsonable_class(self):
-        """The framework defines this property so that it can be serializable
-        with JSON (see lemoneval.util.json package).
-        """
-        return type(self).__qualname__
 
     def set_parameters(self, parameters):
         """Check that all expected parameters are provided and store them.

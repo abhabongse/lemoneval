@@ -5,7 +5,7 @@ class Session(object):
     """Session object representing a player interacting with a particular
     exercise framework.
     """
-    jsonable_class = "Session"
+    serializable_to_json = ...  # use __dict__
 
     def __init__(self, framework, stage=0):
         self.framework = framework
@@ -27,9 +27,6 @@ class Session(object):
         return _to_json(self)
 
     @classmethod
-    def from_json(cls, s, target_classes=None):
+    def from_json(cls, s):
         from ..util.json import from_json as _from_json
-        new_target_classes = dict(Session=cls)
-        if target_classes:
-            new_target_classes.update(target_classes)
-        return _from_json(s, new_target_classes)
+        return _from_json(s)

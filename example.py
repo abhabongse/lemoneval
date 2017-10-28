@@ -12,7 +12,6 @@ framework = FiveChoicesFramework(
 session = framework.create_session()
 print("session =", session)
 jsontxt = session.to_json()
-new_session = Session.from_json(
-    jsontxt, dict(FiveChoicesFramework=FiveChoicesFramework)
-)
+print("jsontxt =", jsontxt)
+new_session = Session.from_json(jsontxt)
 print("new_session =", new_session)
