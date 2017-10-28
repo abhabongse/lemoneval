@@ -32,10 +32,15 @@ class PredicateValidator(BaseValidator):
         self.predicate = predicate
 
     def __call__(self, value, target):
-        if self.predicate(value):
-            return True
-        test_name = self.name or "the predicate test"
-        raise ValueError(
-            f"the given value {value!r} failed {test_name} for the "
-            f"parameter '{target}'"
-        )
+        try:
+            if self.predicate(value):
+                return True
+            else:
+                raise ValueError
+        except Exception as e:
+            test_name = self.name or "the predicate test"
+            e.args += (
+                f"the given value {value!r} failed {test_name} for the "
+                f"parameter '{target}'",
+            )
+            raise
