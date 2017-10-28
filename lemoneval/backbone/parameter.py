@@ -63,6 +63,11 @@ class Parameter(BaseParameter):
         which expects one value argument. If the value is considered valid by
         the validator, then it should return True. Otherwise, it should either
         return False or raise an exception describing what went wrong.
+
+        This method could be used as a decorator for a staticmethod in
+        framework classes to define a single validator. Incidentally, when only
+        one validator is provided, it will also be returned as a staticmethod
+        without a need for extra @staticmethod decorator.
         """
         from .validator import BaseValidator, PredicateValidator
         for validator in validators:
@@ -75,6 +80,8 @@ class Parameter(BaseParameter):
                 raise TypeError(
                     f"expected a validator but {alien} was given"
                 )
+        if len(validators) == 1:
+            return staticmethod(validators[0])
 
     def parameter_validate(self, value):
         if not isinstance(value, self.dtype):

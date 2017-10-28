@@ -8,10 +8,9 @@ class FiveChoicesFramework(framework.BaseFramework):
 
     parameters:
         question: Question text
+        choices: List of 5 choice texts
         answer: The 0-index of the correct answer
         score: Positive value score
-        choice_a, choice_b, choice_c, choice_d, choice_e:
-            Choice text for each of the 5 choices.
     """
 
     question = parameter.Parameter(dtype=str)  # question text
