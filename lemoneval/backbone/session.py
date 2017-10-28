@@ -5,7 +5,7 @@ class Session(object):
     """Session object representing a player interacting with a particular
     exercise framework.
     """
-    serializable_to_json = ...  # use __dict__
+    serializable_to_json = "__dict__"
 
     def __init__(self, framework, stage=0):
         self.framework = framework

@@ -29,7 +29,7 @@ class BaseFramework(object, metaclass=framework_builder):
     Caution: Parameter values will be written to the __dict__ of the instance
     object. Please do not meddle with __dict__ itself like a responsible user.
     """
-    serializable_to_json = ...
+    serializable_to_json = "__dict__"
 
     def __init__(self, *args, **parameters):
         self.set_parameters(parameters)
