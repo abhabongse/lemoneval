@@ -29,7 +29,7 @@ class BaseFramework(object, metaclass=framework_builder):
     Caution: Parameter values will be written to the __dict__ of the instance
     object. Please do not meddle with __dict__ itself like a responsible user.
     """
-    serializable_to_json = "__dict__"
+    serialized_kwargs = "__dict__"
 
     def __init__(self, *args, **parameters):
         self.set_parameters(parameters)
@@ -69,3 +69,18 @@ class BaseFramework(object, metaclass=framework_builder):
         """
         from .session import Session
         return Session(self)
+
+    def __iter__(self):
+        return self.create_session()
+
+    def progress_session(self, session, response):
+        """Progress the session with the given response.
+
+        For the first call, the response will always be an empty dictionary
+        since there is no response yet.
+
+        Once no more responses is expected, session.report must be defined with
+        the summary of the session, and StopIteration must be raised.
+        """
+        session.report = {}
+        raise StopIteration
