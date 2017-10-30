@@ -1,26 +1,34 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
+from itertools import chain
+
+
 class framework_builder(type):
     """Metaclass for BaseFramework and its subclasses."""
 
-    def __new__(cls, clsname, bases, clsdict):
-        if bases == (object,):
-            # meaning: cls is not subclass of BaseFramework
-            return super().__new__(cls, clsname, bases, clsdict)
+    def __init__(cls, clsname, bases, clsdict):
+        super().__init__(clsname, bases, clsdict)
+        # Create parameter_names from clsdict
+        old_parameter_names = getattr(cls, "parameter_names", ())
+        new_parameter_names = []
         from .parameter import BaseParameter
-        parameter_names = []
         for name, descriptor in clsdict.items():
-            if isinstance(descriptor, BaseParameter):
+            if name in old_parameter_names:
+                if not isinstance(descriptor, BaseParameter):
+                    raise TypeError(
+                        f"Parameter {name!r} overriden in derived class."
+                    )
+            elif isinstance(descriptor, BaseParameter):
                 if name.startswith("_"):
                     raise NameError(
                         f"parameter names should not begin with an underscore "
                         f"but the name {name!r} is used"
                     )
-                parameter_names.append(name)
-        clsdict['parameter_names'] = tuple(parameter_names)
-        clsobj = super().__new__(cls, clsname, bases, clsdict)
-        return clsobj
+                new_parameter_names.append(name)
+        cls.parameter_names = tuple(chain(
+            old_parameter_names, new_parameter_names
+        ))
 
 
 class BaseFramework(object, metaclass=framework_builder):
