@@ -34,16 +34,4 @@ except StopIteration:
     print("session 04 =", new_session)
 
 # Display result
-print(new_session.report)
-
-# jsontxt = session.to_json()
-# print("jsontxt =", jsontxt)
-# new_session = Session.from_json(jsontxt)
-# print("new_session =", new_session)
-#
-# next(session)
-# print("session =", session)
-# jsontxt = session.to_json()
-# print("jsontxt =", jsontxt)
-# new_session = Session.from_json(jsontxt)
-# print("new_session =", new_session)
+print(new_session.summary_data)

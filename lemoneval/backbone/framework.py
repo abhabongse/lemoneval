@@ -90,5 +90,4 @@ class BaseFramework(object, metaclass=framework_builder):
         Once no more responses is expected, session.report must be defined with
         the summary of the session, and StopIteration must be raised.
         """
-        session.report = {}
         raise StopIteration
