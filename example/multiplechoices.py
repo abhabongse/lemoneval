@@ -1,7 +1,7 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <abhabongse@gmail.com>
 
-from lemoneval.assembled.framework import FiveChoicesFramework
+from lemoneval.assembled.standard.multiplechoices import FiveChoicesFramework
 from lemoneval.backbone.session import Session
 
 framework = FiveChoicesFramework(
