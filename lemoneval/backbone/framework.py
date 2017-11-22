@@ -1,5 +1,5 @@
 # Lemoneval Project
-# Author: Abhabongse Janthong <abhabongse@gmail.com>
+# Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 from itertools import chain
 

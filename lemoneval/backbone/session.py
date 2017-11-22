@@ -1,5 +1,5 @@
 # Lemoneval Project
-# Author: Abhabongse Janthong <abhabongse@gmail.com>
+# Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 class Session(object):
     """Session object representing a player interacting with a particular

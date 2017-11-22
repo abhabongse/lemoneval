@@ -1,5 +1,5 @@
 # Lemoneval Project
-# Author: Abhabongse Janthong <abhabongse@gmail.com>
+# Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 """This module provides two functions: to_json and from_json. They work
 together to serialize and deserialize objects of custom classes.
 
