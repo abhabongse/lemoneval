@@ -1,11 +1,14 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
+"""Exercise framework is the core structure of what one type of exercise could
+be. Custom frameworks are expected to be derived from `BaseFramework`. See
+examples of custom frameworks in modules under `lemoneval.assembled`.
+"""
 
 from itertools import chain
 
-
 class framework_builder(type):
-    """Metaclass for BaseFramework and its subclasses."""
+    """A metaclass for `BaseFramework` and its subclasses."""
 
     def __init__(cls, clsname, bases, clsdict):
         super().__init__(clsname, bases, clsdict)
@@ -32,16 +35,24 @@ class framework_builder(type):
 
 
 class BaseFramework(object, metaclass=framework_builder):
-    """Defines the structural framework for one type of exercise.
+    """Defines structural framework for one type of exercise format.
 
-    Caution: Parameter values will be written to the __dict__ of the instance
-    object. Please do not meddle with __dict__ itself like a responsible user.
+    Caution:
+        Parameter values will be written to `__dict__` of the instance object.
+        Avoid directly interacting with `__dict__` if possible.
     """
+
+    # This attribute is used by '..util.json' package to facilitate JSON
+    # serialization.
     serialized_kwargs = "__dict__"
 
     def __init__(self, *args, **parameters):
-        self.set_parameters(parameters)
-        self.framework_validate()
+        """To initialize an instance of the framework, all framework-specific
+        parameters must be provided via keyword-only arguments through the
+        constructor.
+        """
+        self._validate_and_set_parameters(parameters)
+        self.framework_validate()  # QUESTION: move to sub of above call?
 
     def __repr__(self):
         parameters_text = ",\n".join(
@@ -50,9 +61,14 @@ class BaseFramework(object, metaclass=framework_builder):
         )
         return f"{type(self).__qualname__}(\n{parameters_text}\n)"
 
-    def set_parameters(self, parameters):
-        """Check that all expected parameters are provided and store them.
-        Excessive unwanted parameters will be ignored.
+    def _validate_and_set_parameters(self, parameters):
+        """Verify the provided parameters and store them in instance object.
+
+        This method first verifies that all parameters are provided and they
+        are valid according to parameter-level specifications. Errors will be
+        raised upon validation errors.
+
+        Superflous parameters are silently ignored.
         """
         for name in self.parameter_names:
             if name not in parameters:
@@ -63,17 +79,19 @@ class BaseFramework(object, metaclass=framework_builder):
         """Framework-level validation: to be overriden by subclasses.
 
         This method is called once all parameter-level values are assigned and
-        validated. It is to make sure that the entire exercise framework makes
-        sense as a whole.
+        validated. It is to make sure that the entire exercise framework is
+        valids as a whole.
 
-        This method produces no result when the validation is successful;
-        otherwise, it raises an exception describing what went wrong.
+        This method should return nothing when the validation succeeds;
+        otherwise, it should raised an exception describing what went wrong.
         """
         pass
 
     def create_session(self):
-        """When a player is attempted at the exercise, a session for the
-        exercise framework must be created with this method.
+        """Create an exercise session from this exercise framework.
+
+        When an exercise performer is attempting at the exercise, a session
+        for this framework is created with this method.
         """
         from .session import Session
         return Session(self)
@@ -82,12 +100,28 @@ class BaseFramework(object, metaclass=framework_builder):
         return self.create_session()
 
     def progress_session(self, session, response):
-        """Progress the session with the given response.
+        """Progress the session to the next step using the given response.
 
-        For the first call, the response will always be an empty dictionary
-        since there is no response yet.
+        Warning:
+            While this method is expected to be overriden by subclasses, it is
+            intended to be called by the internals of the Session object
+            instances without direct external intervention.
 
-        Once no more responses is expected, session.report must be defined with
-        the summary of the session, and StopIteration must be raised.
+        Implementers of this method is expected to interact with `session`
+        object to determine and modify the state of the session. For instance,
+        if performer's interactions with session objects are divided into
+        *stages* then an implementer may opt to create `session.stage_counter`
+        attribute to keep track of that fact.
+
+        Note:
+            The first call to this method by a Session instance will be made
+            with empty response (an empty dict). This step can be used to set
+            up a new exercise session.
+
+        Note:
+            Once no more responses is expected from the performer, the
+            attribute `session.report` must be defined with the end summary
+            of the session, and `StopIteration` must be raised.
         """
+        # TODO: first response should be None
         raise StopIteration
