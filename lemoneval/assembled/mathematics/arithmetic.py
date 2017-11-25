@@ -24,7 +24,7 @@ class AddingNumbersFramework(framework.BaseFramework):
                 f"{self.lower_bound} and {self.upper_bound} are given resp."
             )
 
-    def progress_session(self, session, response):
+    def progress_session(self, session, *, response_sum=None):
         # 1: Session launched for the first time
         if not hasattr(session, "stage"):
             session.stage = 0
@@ -32,7 +32,7 @@ class AddingNumbersFramework(framework.BaseFramework):
         # 2: A response is given to the session, and STOP!
         if session.stage == 0:
             session.stage = 1
-            summary = self.check_response(session, response)
+            summary = self.check_response(session, response_sum)
             raise StopIteration(summary)
 
     def randomize_numbers(self, session):

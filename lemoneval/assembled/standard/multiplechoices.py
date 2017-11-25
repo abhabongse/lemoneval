@@ -31,7 +31,7 @@ class MultipleChoicesFramework(framework.BaseFramework):
                 f"{len(self.choices)-1} but {self.answer!r} was given"
             )
 
-    def progress_session(self, session, response):
+    def progress_session(self, session, *, choose=None):
         # 1: Session launched for the first time
         if not hasattr(session, "stage"):
             session.stage = 0
@@ -39,8 +39,8 @@ class MultipleChoicesFramework(framework.BaseFramework):
         # 2: A response is given to the session, and STOP!
         if session.stage == 0:
             session.stage = 1
-            session.choose = response.get("choose", None)
-            is_correct = (session.choose == self.answer)
+            session.chosen = choose
+            is_correct = (session.chosen == self.answer)
             raise StopIteration ({
                 "status": "correct" if is_correct else "incorrect",
                 "score": is_correct * self.score
