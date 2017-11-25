@@ -1,103 +1,132 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
-"""This module provides two functions: to_json and from_json. They work
-together to serialize and deserialize objects of custom classes.
+"""JSON serialization and deserialization for custom classes.
 
-When an object is serialized, the property object.serializable_to_json will be
-invoked. It should return a tuple of positional and keyword arguments needed
-to reconstruct the object with __init__ method. Alternatively, it could just
-be the string literal "__dict__" so that the entire object.__dict__ would be
-used as keyword arguments dictionary.
+This module provides four functions: `dumps`, `dump`, `loads`, and `load`,
+which behaves mostly the same as their counterparts in `json` built-in package
+but with customized serialization.
+
+Custom classes are expected to implement **at least one** the following
+attributes, either as a constant or a property onto class method:
+
+    object.serialized_args: This attribute should result in a list of values
+        which can be supplied to the class constructor via positional
+        arguments to reconstruct the object.
+
+        This works in conjucntion with named keyword arguments obtained via
+        `object.serialized_kwargs` during the object construction.
+
+    object.serialized_kwargs: This attribute should result in a dictionary of
+        key-value pairs which can be supplied to the class constructor via
+        named keyword arguments to reconstruct the object.
+
+        This works in conjunction with positional arguments obtained via
+        `object.serialized_args` during the object construction.
+
+        Alternatively, if this attribute results in a string `__dict__` then
+        it is as if `object.__dict__` is returned.
+
+    object.serialized_dict: This attribute should result in a dictionary of
+        key-value pairs which will be used to **update** `object.__dict__`
+        attribute after the object has already been reconstructed via the above
+        two attributes.
+
+        Alternatively, if this attribute results in a string `__all__` then
+        it is as if `object.__dict__` is returned.
+
+The structure of JSON upon object serialization is a dictionary with the
+following key-value pairs:
+
+    __module__: Module string of the object class.
+    __class__: Name of the object class as defined in `__module__`
+    __args__: Mandatory positional arguments (list) to be supplemented upon
+        object instance reconstruction by class constructor.
+    __kwargs__: Mandatory named keyword arguments (dict) to be supplemented
+        upon object reconstruction by class constructor.
+    __dict__: Additional dictionary items to be added to `object.__dict__`
+        once the object is reconstructed by constructor.
 """
 
+from functools import partial
 import importlib
 import json
 
 
-def _encoder_default(obj):
-    """Helper function which is called when the JSON encoder (dumper) do not
-    recognize the object. This function would return the object as a dictionary
-    with the following keys:
+def _encoder_default(o):
+    """Helper function called by JSON encoder when it does not recognize the
+    object of custom classes.
 
-    __module__: Module string of the class of the object
-    __name__: Name of the class of the object in the above module
-    __args__: Necessary positional arguments (list) to the constructor of the
-        class of the object upon object reconstruction.
-        This is obtained by calling object.serialized_args property.
-    __kwargs__: Necessary keyword-only arguments (dict) to the constructor of
-        the class of the object upon object reconstruction.
-        This is obtained by calling object.serialized_kwargs property.
-        Special case: if said property is the string literal "__dict__" then
-            then entire object.__dict__ is used.
-    __dict__: Additional dictionary items to be added to object.__dict__ once
-        the object is reconstructed using __args__ and __kwargs__ above.
-        This is obtained by calling object.serialized_dict property.
-        Special case: if said property is the string literal "__all__" then the
-            entire object.__dict__ is used.
+    This function is typically supplied as `default` argument to the JSON
+    encoder. It utilizes three attributes: `object.serialized_args`,
+    `object.serialized_kwargs`, and `object.serialized_dict` to provide a
+    JSON-compatible object serialization for custom classes.
+
+    More details are outlined in module-level docstring.
     """
-    ###
-    # Obtain serializable data (args, kwargs, dict)
+    # Obtain serializable data: __args__, __kwargs__, __dict__
     serializable = False
     try:
-        args = obj.serialized_args; serializable = True
+        s_args = o.serialized_args; serializable = True
     except AttributeError:
-        args = ()
+        s_args = ()
     try:
-        kwargs = obj.serialized_kwargs; serializable = True
-        if kwargs == "__dict__": kwargs = obj.__dict__
+        s_kwargs = o.serialized_kwargs; serializable = True
     except AttributeError:
-        kwargs = {}
+        s_kwargs = {}
+    else:
+        if s_kwargs == "__dict__": s_kwargs = o.__dict__
     try:
-        objdict = obj.serialized_dict; serializable = True
-        if objdict == "__all__": objdict = obj.__dict__
+        s_dict = o.serialized_dict; serializable = True
     except AttributeError:
-        objdict = {}
+        s_dict = {}
+    else:
+        if s_dict == "__all__": s_dict = o.__dict__
+
+    # Check if object is not customized for JSON serialization
     if not serializable:
         raise TypeError("object not JSON serializable")
-    ###
-    # Prepare JSON dictionary and put all data together
-    cls = type(obj)
-    json_data = dict(__module__=cls.__module__, __class__=cls.__name__)
-    if args:
-        json_data["__args__"] = args
-    if kwargs:
-        json_data["__kwargs__"] = kwargs
-    if objdict:
-        json_data["__dict__"] = objdict
-    return json_data
+
+    # Check whether the class is defined at top-level of the module
+    cls = type(o)
+    if cls.__name__ != cls.__qualname__:
+        raise TypeError("object class not defined at top-level")
+
+    # Initialize JSON data with module and class names, and populate
+    # other serialized attribute as needed.
+    data = dict(__module__=cls.__module__, __class__=cls.__name__)
+    if s_args:
+        data["__args__"] = s_args
+    if s_kwargs:
+        data["__kwargs__"] = s_kwargs
+    if s_dict:
+        data["__dict__"] = s_dict
+    return data
 
 
-def _decoder_object_hook(obj):
-    """Object hook helper for JSON decoder (loader) which tries to reverse the
-    task of _encoder_default function.
+def _decoder_object_hook(data):
+    """Helper function called by JSON decoder to reverse `_encoder_default`.
+
+    This function is typically supplied as `object_hook` argument to JSON
+    decoder in order to reconstruct the object instance of customized classes.
+
+    More details are outlined in module-level docstring.
     """
     try:
-        module = importlib.import_module(obj["__module__"])
-        cls = getattr(module, obj["__class__"])
-        args = obj.get("__args__", ())
-        kwargs = obj.get("__kwargs__", {})
-        objdict = obj.get("__dict__", {})
+        module = importlib.import_module(data["__module__"])
+        cls = getattr(module, data["__class__"])
+        s_args = data.get("__args__", ())
+        s_kwargs = data.get("__kwargs__", {})
+        s_dict = data.get("__dict__", {})
     except:
-        return obj
+        return data
     else:
-        obj = cls(*args, **kwargs)
-        obj.__dict__.update(objdict)
-        return obj
+        o = cls(*s_args, **s_kwargs)
+        o.__dict__.update(s_dict)
+        return o
 
 
-def to_json(o):
-    """Serialize object into JSON string."""
-    return json.dumps(o, indent=2, default=_encoder_default)
-
-def to_json_file(o, fp):
-    """Serialize object into JSON file."""
-    return json.dump(o, fp, indent=2, default=_encoder_default)
-
-
-def from_json(s):
-    """Return python object from JSON string."""
-    return json.loads(s, object_hook=_decoder_object_hook)
-
-def from_json_file(fp):
-    """Return python object from JSON string."""
-    return json.load(fp, object_hook=_decoder_object_hook)
+# Define customized versions of dump[s] and load[s] functions
+dumps = partial(json.dumps, indent=2, default=_encoder_default)
+dump = partial(json.dump, indent=2, default=_encoder_default)
+loads = partial(json.loads, object_hook=_decoder_object_hook)
+load = partial(json.load, object_hook=_decoder_object_hook)

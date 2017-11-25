@@ -77,7 +77,7 @@ class Session(object):
         """
         if self.has_started:
             return self._public
-        raise AttributeError("session not yet started") from e
+        raise AttributeError("session not yet started")
 
     @property
     def summary_data(self):
@@ -86,15 +86,15 @@ class Session(object):
         """
         if self.has_finished:
             return self._summary
-        raise AttributeError("session not yet finished") from e
+        raise AttributeError("session not yet finished")
 
     def to_json(self):
         """Serialize the session into JSON string."""
-        from ..util.json import to_json as _to_json
-        return _to_json(self)
+        from ..util.json import dumps as dump_json
+        return dump_json(self)
 
     @staticmethod
     def from_json(s):
         """Deserialize the session from JSON string."""
-        from ..util.json import from_json as _from_json
-        return _from_json(s)
+        from ..util.json import loads as load_json
+        return load_json(s)
