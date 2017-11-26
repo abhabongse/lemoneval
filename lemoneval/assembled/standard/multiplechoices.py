@@ -1,10 +1,10 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
-from ...backbone import framework, parameter
-from ...backbone.stages import linear_stages
+from ...backbones import frameworks, parameters
+from ...backbones.stages import linear_stages
 
-class MultipleChoicesFramework(framework.BaseFramework):
+class MultipleChoicesFramework(frameworks.BaseFramework):
     """Multiple choice question framework with one correct answer.
 
     parameters:
@@ -13,10 +13,10 @@ class MultipleChoicesFramework(framework.BaseFramework):
         answer: 0-index of the correct answer in choices
         score: Positive value score
     """
-    question = parameter.Parameter(dtype=str)  # question text
-    choices = parameter.SequenceParameter(dtype=str)   # choices
-    answer = parameter.Parameter(dtype=int)    # index to the right choice
-    score = parameter.Parameter(dtype=int)     # score of this question
+    question = parameters.Parameter(dtype=str)  # question text
+    choices = parameters.SequenceParameter(dtype=str)   # choices
+    answer = parameters.Parameter(dtype=int)    # index to the right choice
+    score = parameters.Parameter(dtype=int)     # score of this question
 
     @score.add_validators  # score must be positive
     def positive_score(score):
@@ -52,4 +52,4 @@ class MultipleChoicesFramework(framework.BaseFramework):
 class FiveChoicesFramework(MultipleChoicesFramework):
     """Multiple choice question framework with 5 choices."""
 
-    choices = parameter.SequenceParameter(dtype=str, length=5)
+    choices = parameters.SequenceParameter(dtype=str, length=5)

@@ -131,8 +131,8 @@ class Session(object):
         """Serialize the session into JSON string (and additionally write to
         a file if file pointer `fp` is provided)."""
         if fp is not None:
-            from ..util.json import dump as write_json_file
+            from ..utils.json import dump as write_json_file
             write_json_file(self, fp)
         if string_return:
-            from ..util.json import dumps as get_json_str
+            from ..utils.json import dumps as get_json_str
             return get_json_str(self)

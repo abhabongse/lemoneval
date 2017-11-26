@@ -64,7 +64,7 @@ class Parameter(BaseParameter):
         the validator, then it should return True. Otherwise, it should either
         return False or raise an exception describing what went wrong.
         """
-        from .validator import BaseValidator, PredicateValidator
+        from .validators import BaseValidator, PredicateValidator
         for validator in validators:
             if isinstance(validator, BaseValidator):
                 self.validators.append(validator)

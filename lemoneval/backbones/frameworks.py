@@ -16,7 +16,7 @@ class framework_builder(type):
         # Create parameter_names from clsdict
         old_parameter_names = getattr(cls, "parameter_names", ())
         new_parameter_names = []
-        from .parameter import BaseParameter
+        from .parameters import BaseParameter
         for name, descriptor in clsdict.items():
             if name in old_parameter_names:
                 if not isinstance(descriptor, BaseParameter):
@@ -102,7 +102,7 @@ class BaseFramework(object, metaclass=framework_builder):
         When an exercise performer is attempting at the exercise, a session
         for this framework is created with this method.
         """
-        from .session import Session
+        from .sessions import Session
         return Session(self)
 
     def __iter__(self):

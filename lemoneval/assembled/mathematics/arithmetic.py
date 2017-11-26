@@ -1,10 +1,10 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
-from ...backbone import framework, parameter
-from ...backbone.stages import linear_stages
+from ...backbones import frameworks, parameters
+from ...backbones.stages import linear_stages
 
-class AddingNumbersFramework(framework.BaseFramework):
+class AddingNumbersFramework(frameworks.BaseFramework):
     """Simple algebra question: adding two integers which are uniformly
     randomized from within the given bound.
 
@@ -13,9 +13,9 @@ class AddingNumbersFramework(framework.BaseFramework):
         upper_bound: Upper bound of randomized integers
         score: Positive value score
     """
-    lower_bound = parameter.Parameter(dtype=int)
-    upper_bound = parameter.Parameter(dtype=int)
-    score = parameter.Parameter(dtype=int)
+    lower_bound = parameters.Parameter(dtype=int)
+    upper_bound = parameters.Parameter(dtype=int)
+    score = parameters.Parameter(dtype=int)
 
     def framework_validate(self):
         # Lower bound must be no greater than upper bound
