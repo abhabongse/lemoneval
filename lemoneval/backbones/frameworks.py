@@ -33,14 +33,6 @@ class framework_builder(type):
         cls.parameter_names = tuple(chain(
             old_parameter_names, new_parameter_names
         ))
-        # Check resume_session signature: must have default values
-        # spec = getfullargspec(cls.resume_session)
-        # def _len(x): return int(bool(x) and len(x))
-        # if (_len(spec.args) != _len(spec.defaults) + 2
-        #     or _len(spec.kwonlyargs) != _len(spec.kwonlydefaults)):
-        #     raise TypeError(
-        #         "arguments of 'resume_session' requires default values"
-        #     )
 
 
 class BaseFramework(object, metaclass=framework_builder):

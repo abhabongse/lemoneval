@@ -34,6 +34,7 @@ class MultipleChoicesFramework(frameworks.BaseFramework):
 
     @linear_stages  # show question
     def resume_session(self, session):
+        """Initiate the exercise interaction."""
         return True, {
             "question": self.question,
             "choices": self.choices
@@ -41,6 +42,7 @@ class MultipleChoicesFramework(frameworks.BaseFramework):
 
     @resume_session.add_stage  # check answer
     def resume_session(self, session, *, selected_choice):
+        """Check the answer."""
         session.selected_choice = selected_choice
         is_correct = (session.selected_choice == self.answer)
         return True, {
