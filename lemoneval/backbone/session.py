@@ -10,7 +10,7 @@ exercise framework. A session could be created in one of two ways:
         functions defined in `..util.json`.
 
 Interactions with session objects depends on different types of frameworks
-and is described by the method `framework.progress_session`.
+and is described by the method `framework.resume_session`.
 """
 
 class Session(object):
@@ -54,13 +54,13 @@ class Session(object):
 
     def _resume(self):
         """Obtain and pass along prepared responses (`_prepared_args` and
-        `_prepared_kwargs`) to the method `framework.progress_session` to
+        `_prepared_kwargs`) to the method `framework.resume_session` to
         resume the session.
         """
         if self.has_finished:
             raise StopIteration(self._summary)
         try:
-            self._public = self._framework.progress_session(
+            self._public = self._framework.resume_session(
                 self, *self._prepared_args, **self._prepared_kwargs
             )
             return self._public
@@ -73,7 +73,7 @@ class Session(object):
 
     def _clear_prepared(self):
         """Clear prepared responses."""
-        # Responses to be delivered to `framework.progress_session`
+        # Responses to be delivered to `framework.resume_session`
         self._prepared_args = ()
         self._prepared_kwargs = {}
 
@@ -88,7 +88,7 @@ class Session(object):
     def submit(self, *response_args, **response_kwargs):
         """Attempts to make progress on the session by submitting responses.
 
-        This method is the gateway to `framework.progress_session`. The first
+        This method is the gateway to `framework.resume_session`. The first
         call to this is expected to initialize the session with empty response.
         Every call to this method either returns new public data or raises a
         `StopIteration` with final summary.
@@ -127,12 +127,12 @@ class Session(object):
             return self._summary
         raise AttributeError("session not yet finished")
 
-    def to_json(self, fp=None, no_return=False):
+    def to_json(self, fp=None, string_return=True):
         """Serialize the session into JSON string (and additionally write to
         a file if file pointer `fp` is provided)."""
         if fp is not None:
             from ..util.json import dump as write_json_file
             write_json_file(self, fp)
-        if not no_return:
+        if string_return:
             from ..util.json import dumps as get_json_str
             return get_json_str(self)

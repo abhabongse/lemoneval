@@ -2,6 +2,7 @@
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 from ...backbone import framework, parameter
+from ...backbone.stages import linear_stages
 
 class MultipleChoicesFramework(framework.BaseFramework):
     """Multiple choice question framework with one correct answer.
@@ -31,20 +32,22 @@ class MultipleChoicesFramework(framework.BaseFramework):
                 f"{len(self.choices)-1} but {self.answer!r} was given"
             )
 
-    def progress_session(self, session, *, choose=None):
-        # 1: Session launched for the first time
-        if not hasattr(session, "stage"):
-            session.stage = 0
-            return dict(question=self.question, choices=self.choices)
-        # 2: A response is given to the session, and STOP!
-        if session.stage == 0:
-            session.stage = 1
-            session.chosen = choose
-            is_correct = (session.chosen == self.answer)
-            raise StopIteration ({
-                "status": "correct" if is_correct else "incorrect",
-                "score": is_correct * self.score
-            })
+    @linear_stages  # show question
+    def resume_session(self, session):
+        return True, {
+            "question": self.question,
+            "choices": self.choices
+        }
+
+    @resume_session.add_stage  # check answer
+    def resume_session(self, session, *, selected_choice):
+        session.selected_choice = selected_choice
+        is_correct = (session.selected_choice == self.answer)
+        return True, {
+            "status": "correct" if is_correct else "incorrect",
+            "score": is_correct * self.score
+        }
+
 
 class FiveChoicesFramework(MultipleChoicesFramework):
     """Multiple choice question framework with 5 choices."""

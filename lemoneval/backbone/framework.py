@@ -33,14 +33,14 @@ class framework_builder(type):
         cls.parameter_names = tuple(chain(
             old_parameter_names, new_parameter_names
         ))
-        # Check progress_session signature: must have default values
-        spec = getfullargspec(cls.progress_session)
-        def _len(x): return int(bool(x) and len(x))
-        if (_len(spec.args) != _len(spec.defaults) + 2
-            or _len(spec.kwonlyargs) != _len(spec.kwonlydefaults)):
-            raise TypeError(
-                "arguments of 'progress_session' requires default values"
-            )
+        # Check resume_session signature: must have default values
+        # spec = getfullargspec(cls.resume_session)
+        # def _len(x): return int(bool(x) and len(x))
+        # if (_len(spec.args) != _len(spec.defaults) + 2
+        #     or _len(spec.kwonlyargs) != _len(spec.kwonlydefaults)):
+        #     raise TypeError(
+        #         "arguments of 'resume_session' requires default values"
+        #     )
 
 
 class BaseFramework(object, metaclass=framework_builder):
@@ -108,8 +108,8 @@ class BaseFramework(object, metaclass=framework_builder):
     def __iter__(self):
         return self.create_session()
 
-    def progress_session(self, session, *response_args, **response_kwargs):
-        """Progress the session to the next step using the given responses.
+    def resume_session(self, session):
+        """Resume the session to the next step using the given responses.
 
         Warning:
             While this method is expected to be overriden by subclasses, it is
@@ -120,21 +120,17 @@ class BaseFramework(object, metaclass=framework_builder):
         object to determine and modify the state of the session. For instance,
         if performer's interactions with session objects are divided into
         *stages* then an implementer may opt to create `session.stage_counter`
-        attribute to keep track of that fact.
+        attribute to keep track of that fact. Alternatively, please have a
+        look at `.stages` package for some helpers.
 
         Note:
             The first call to this method by a Session instance will be made
-            with empty response. This step can be used to set up a new exercise
-            session.
+            with empty response. This step can be used to set up a new
+            exercise session.
 
         Note:
             Once no more responses is expected from the performer, the
             attribute `session.report` must be defined with the end summary
             of the session, and `StopIteration` must be raised.
-
-        Note:
-            It is important that this method do not raise exceptions (other
-            than `StopIteration`). So make sure that this method returns
-            gracefully.
         """
-        raise StopIteration
+        raise NotImplementedError

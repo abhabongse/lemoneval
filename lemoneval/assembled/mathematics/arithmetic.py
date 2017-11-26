@@ -2,6 +2,7 @@
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 from ...backbone import framework, parameter
+from ...backbone.stages import linear_stages
 
 class AddingNumbersFramework(framework.BaseFramework):
     """Simple algebra question: adding two integers which are uniformly
@@ -24,26 +25,17 @@ class AddingNumbersFramework(framework.BaseFramework):
                 f"{self.lower_bound} and {self.upper_bound} are given resp."
             )
 
-    def progress_session(self, session, *, response_sum=None):
-        # 1: Session launched for the first time
-        if not hasattr(session, "stage"):
-            session.stage = 0
-            return self.randomize_numbers(session)
-        # 2: A response is given to the session, and STOP!
-        if session.stage == 0:
-            session.stage = 1
-            summary = self.check_response(session, response_sum)
-            raise StopIteration(summary)
-
-    def randomize_numbers(self, session):
+    @linear_stage_progress  # generate numbers
+    def resume_session(self, session):
         import random
         session.a = random.randint(self.lower_bound, self.upper_bound)
         session.b = random.randint(self.lower_bound, self.upper_bound)
-        return dict(a=session.a, b=session.b)
+        return True, { "a": session.a, "b": session.b }
 
-    def check_response(self, session, answered_sum):
-        is_correct = (answered_sum == session.a + session.b)
-        return {
+    @resume_session.add_stage  # check answer
+    def _(self, session, *, response_sum):
+        is_correct = (response_sum == session.a + session.b)
+        return True, {
             "status": "correct" if is_correct else "incorrect",
             "score": is_correct * self.score
         }
