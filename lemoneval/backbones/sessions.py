@@ -13,6 +13,34 @@ Interactions with session objects depends on different types of frameworks
 and is described by the method `framework.resume_session`.
 """
 
+from functools import update_wrapper
+from types import MethodType
+
+class _resume_method_signature(object):
+    """Decorate to assign signature to resumable methods."""
+
+    def __init__(self, func):
+        self._func = func
+
+    def __call__(self, session, *response_args, **response_kwargs):
+        return self._func(session, *response_args, **response_kwargs)
+
+    def __get__(self, session, owner):
+        if session is None:
+            return self
+        self._update_wrapper(session)
+        return MethodType(self, session)
+
+    def _update_wrapper(self, session):
+        resume_method = session._framework.resume_session
+        if hasattr(resume_method, "get_current_stage"):
+            resume_method = MethodType(
+                resume_method.get_current_stage(session), session
+            )
+        update_wrapper(self, resume_method, updated=())
+        self.__wrapped__ = resume_method
+
+
 class Session(object):
     """Defines an interaction of a player with an exercise framework.
 
@@ -77,6 +105,7 @@ class Session(object):
         self._prepared_args = ()
         self._prepared_kwargs = {}
 
+    @_resume_method_signature
     def prepare(self, *response_args, **response_kwargs):
         """Calling this method followed by `__next__` method is equivalent to
         calling `submit` method directly. This helps working with iterables
@@ -85,6 +114,7 @@ class Session(object):
         self._prepared_args = response_args
         self._prepared_kwargs = response_kwargs
 
+    @_resume_method_signature
     def submit(self, *response_args, **response_kwargs):
         """Attempts to make progress on the session by submitting responses.
 

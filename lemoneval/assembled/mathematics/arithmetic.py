@@ -33,7 +33,7 @@ class AddingNumbersFramework(frameworks.BaseFramework):
         return True, { "a": session.a, "b": session.b }
 
     @resume_session.add_stage  # check answer
-    def _(self, session, *, response_sum):
+    def _check_answer(self, session, *, response_sum):
         is_correct = (response_sum == session.a + session.b)
         return True, {
             "status": "correct" if is_correct else "incorrect",

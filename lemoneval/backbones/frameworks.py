@@ -8,7 +8,7 @@ examples of custom frameworks in modules under `lemoneval.assembled`.
 from inspect import getfullargspec
 from itertools import chain
 
-class framework_builder(type):
+class _framework_builder(type):
     """A metaclass for `BaseFramework` and its subclasses."""
 
     def __init__(cls, clsname, bases, clsdict):
@@ -35,7 +35,7 @@ class framework_builder(type):
         ))
 
 
-class BaseFramework(object, metaclass=framework_builder):
+class BaseFramework(object, metaclass=_framework_builder):
     """Defines structural framework for one type of exercise format.
 
     Caution:
