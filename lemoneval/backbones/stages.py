@@ -4,7 +4,7 @@
 from functools import update_wrapper
 from types import MethodType
 
-class linear_stages(object):
+class StagesSequence(object):
     """Decorator for `framework.resume_session` to add stages to session.
 
     Applying this decorator to `framework.resume_session` method of a
@@ -16,29 +16,29 @@ class linear_stages(object):
     """
 
     def __init__(self, setup_method):
-        self._progress_methods = [setup_method]
+        self._methods = [setup_method]
         update_wrapper(self, setup_method, updated=())
 
     def __call__(self, framework, session, *response_args, **response_kwargs):
         current_stage = self.get_current_stage(session)
-        stage_increment, output = current_stage(
+        stage_increment, result = current_stage(
             framework, session, *response_args, **response_kwargs
         )
         # Update stage counter and check if already last
         session._stage_counter += int(stage_increment)
-        if session._stage_counter == len(self._progress_methods):
-            raise StopIteration(output)
-        return output
+        if session._stage_counter == len(self._methods):
+            raise StopIteration(result)
+        return result
 
-    def __get__(self, instance, owner=None):
-        if instance is None:
+    def __get__(self, framework, owner):
+        if framework is None:
             return self
-        return MethodType(self, instance)
+        return MethodType(self, framework)
 
     def add_stage(self, extra_method):
         """Add extra method as the next stage of `resume_session` in framework
         definition."""
-        self._progress_methods.append(extra_method)
+        self._methods.append(extra_method)
         return self
 
     def get_current_stage(self, session):
@@ -46,11 +46,11 @@ class linear_stages(object):
         also zero-initialize `session._stage_counter` if not already exists.
         """
         session._stage_counter = getattr(session, "_stage_counter", 0)
-        current_stage = self._progress_methods[session._stage_counter]
+        current_stage = self._methods[session._stage_counter]
         return current_stage
 
 
-class directional_stages(object):
+class StagesMapping(object):
     """Decorator for `framework.resume_session` to add stages to session.
 
     Applying this decorator to `framework.resume_session` method of a

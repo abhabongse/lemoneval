@@ -2,7 +2,7 @@
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 from ...backbones import frameworks, parameters
-from ...backbones.stages import linear_stages
+from ...backbones.stages import StagesSequence
 
 class MultipleChoicesFramework(frameworks.BaseFramework):
     """Multiple choice question framework with one correct answer.
@@ -32,7 +32,7 @@ class MultipleChoicesFramework(frameworks.BaseFramework):
                 f"{len(self.choices)-1} but {self.answer!r} was given"
             )
 
-    @linear_stages  # show question
+    @StagesSequence  # show question
     def resume_session(self, session):
         """Initiate the exercise interaction."""
         return True, {

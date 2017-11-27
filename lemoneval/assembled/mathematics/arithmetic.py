@@ -2,7 +2,7 @@
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 from ...backbones import frameworks, parameters
-from ...backbones.stages import linear_stages
+from ...backbones.stages import StagesSequence
 
 class AddingNumbersFramework(frameworks.BaseFramework):
     """Simple algebra question: adding two integers which are uniformly
@@ -25,7 +25,7 @@ class AddingNumbersFramework(frameworks.BaseFramework):
                 f"{self.lower_bound} and {self.upper_bound} are given resp."
             )
 
-    @linear_stage_progress  # generate numbers
+    @StagesSequence  # generate numbers
     def resume_session(self, session):
         import random
         session.a = random.randint(self.lower_bound, self.upper_bound)
