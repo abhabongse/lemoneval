@@ -46,7 +46,10 @@ class StagesSequence(object):
         also zero-initialize `session._stage_counter` if not already exists.
         """
         session._stage_counter = getattr(session, "_stage_counter", 0)
-        current_stage = self._methods[session._stage_counter]
+        try:
+            current_stage = self._methods[session._stage_counter]
+        except IndexError:
+            raise AttributeError("no more callable stages")
         return current_stage
 
 

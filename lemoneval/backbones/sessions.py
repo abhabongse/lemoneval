@@ -15,10 +15,11 @@ and is described by the method `framework.resume_session`.
 
 from functools import partial, update_wrapper, WRAPPER_ASSIGNMENTS
 from types import MethodType
-from ..utils.decorators import MethodWrapper
+from ..utils.decorators import CallableWrapper
+from ..utils.docstrings import trim
 
 
-class _ResumableMethodWrapper(MethodWrapper):
+class _resumable_method(CallableWrapper):
     """Every time `session.wrapped` method binding occurs, update
     documentation attributes on the method.
     """
@@ -28,7 +29,7 @@ class _ResumableMethodWrapper(MethodWrapper):
             resume_func = resume_func.get_current_stage(session)
         resume_method = MethodType(resume_func, session)
         update_wrapper(self, resume_method, updated=())
-        self.__doc__ = f"{self.__doc__}\n{self._func.__doc__}"
+        self.__doc__ = f"{trim(self.__doc__)}\n\n{trim(self._func.__doc__)}"
 
 
 class Session(object):
@@ -95,7 +96,7 @@ class Session(object):
         self._prepared_args = ()
         self._prepared_kwargs = {}
 
-    @_ResumableMethodWrapper
+    @_resumable_method
     def prepare(self, *response_args, **response_kwargs):
         """Calling this method followed by `__next__` method is equivalent to
         calling `submit` method directly. This helps working with iterables
@@ -104,7 +105,7 @@ class Session(object):
         self._prepared_args = response_args
         self._prepared_kwargs = response_kwargs
 
-    @_ResumableMethodWrapper
+    @_resumable_method
     def submit(self, *response_args, **response_kwargs):
         """Attempts to make progress on the session by submitting responses.
 
