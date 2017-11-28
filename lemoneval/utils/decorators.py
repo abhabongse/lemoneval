@@ -1,11 +1,21 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
+"""Decorator helpers."""
 
 from functools import update_wrapper
 
 
 class CallableWrapper(object):
-    """Decorator which turns a method into an updatable one."""
+    """Decorator which allows injection into decorated object method.
+
+    This class takes in an object method (a function) and wraps it inside a
+    new callable proxy method. Whenever this proxy method is binded to an
+    instance object, the method `update_method` will always be called.
+
+    One usage of `update_method` of this class is to call update the callable
+    proxy method with `functools.update_wrapper` to provide a more accurate
+    docstrings, signatures, etc.
+    """
 
     def __init__(self, func):
         self._func = func

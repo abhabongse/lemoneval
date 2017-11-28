@@ -1,5 +1,6 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
+"""Docstring utility functions."""
 
 from textwrap import dedent
 from math import inf as INF

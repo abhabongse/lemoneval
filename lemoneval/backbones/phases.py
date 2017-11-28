@@ -1,5 +1,8 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
+"""Decorator for `framework.resume_session` to facilitate the implementation
+of multi-phrase session controller. 
+"""
 
 from functools import update_wrapper, partial
 from types import MethodType
@@ -170,10 +173,10 @@ class StateMachine(object):
         self._methods_count = 1
         update_wrapper(self, setup_method, updated=())
 
-    def __call__(self, framework, session, *response_args, **response_kwargs):
+    def __call__(self, framework, session, *args, **kwargs):
         state_method = self.get_current_phase(session)
         session._state_label, result = state_method(
-            framework, session, *response_args, **response_kwargs
+            framework, session, *args, **kwargs
         )
         # Update state counter according and check if already at the end
         # Note: session._state_label is guaranteed to exists by calling

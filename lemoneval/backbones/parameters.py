@@ -1,5 +1,7 @@
 # Lemoneval Project
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
+"""Parameter classes for each attribute in exercise frameworks."""
+
 
 class BaseParameter(object):
     """Parameter descriptor for framework classes.

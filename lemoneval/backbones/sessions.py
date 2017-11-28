@@ -97,16 +97,16 @@ class Session(object):
         self._prepared_kwargs = {}
 
     @_resumable_method
-    def prepare(self, *response_args, **response_kwargs):
+    def prepare(self, *args, **kwargs):
         """Calling this method followed by `__next__` method is equivalent to
         calling `submit` method directly. This helps working with iterables
         easier such as for loops.
         """
-        self._prepared_args = response_args
-        self._prepared_kwargs = response_kwargs
+        self._prepared_args = args
+        self._prepared_kwargs = kwargs
 
     @_resumable_method
-    def submit(self, *response_args, **response_kwargs):
+    def submit(self, *args, **kwargs):
         """Attempts to make progress on the session by submitting responses.
 
         This method is the gateway to `framework.resume_session`. The first
@@ -114,8 +114,8 @@ class Session(object):
         Every call to this method either returns new public data or raises a
         `StopIteration` with final summary.
         """
-        self._prepared_args = response_args
-        self._prepared_kwargs = response_kwargs
+        self._prepared_args = args
+        self._prepared_kwargs = kwargs
         return self._resume()
 
     @property
