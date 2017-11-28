@@ -109,18 +109,21 @@ class BaseFramework(object, metaclass=_framework_builder):
             instances without direct external intervention.
 
         Implementers of this method is expected to interact with `session`
-        object to determine and modify the state of the session. For instance,
-        if performer's interactions with session objects are divided into
-        *stages* then an implementer may opt to create `session.stage_counter`
-        attribute to keep track of that fact. Alternatively, please have a
-        look at `.stages` package for some helpers.
+        object to read and modify the state of the session. For instance,
+        if the performer's interactions with sessionobject are divided into
+        *phases*, then an implementer may opt to create `session.phase_counter`
+        attribute to keep track of that fact.
 
-        Note:
+        The package `.phases` provides linear-stage (LS) phasing as well as
+        deterministic finite state machine (DFSM) phasing to help implement
+        this method. Otherwise, please keep in mind the following details.
+
+        Important detail:
             The first call to this method by a Session instance will be made
             with empty response. This step can be used to set up a new
             exercise session.
 
-        Note:
+        Another important detail:
             Once no more responses is expected from the performer, the
             attribute `session.report` must be defined with the end summary
             of the session, and `StopIteration` must be raised.

@@ -2,7 +2,7 @@
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 from ...backbones import frameworks, parameters
-from ...backbones.stages import StagesSequence
+from ...backbones.phases import StateMachine
 
 class AddingNumbersFramework(frameworks.BaseFramework):
     """Simple algebra question: adding two integers which are uniformly
@@ -25,17 +25,17 @@ class AddingNumbersFramework(frameworks.BaseFramework):
                 f"{self.lower_bound} and {self.upper_bound} are given resp."
             )
 
-    @StagesSequence  # generate numbers
+    @StateMachine  # generate numbers
     def resume_session(self, session):
         import random
         session.a = random.randint(self.lower_bound, self.upper_bound)
         session.b = random.randint(self.lower_bound, self.upper_bound)
-        return True, { "a": session.a, "b": session.b }
+        return "check_answer", { "a": session.a, "b": session.b }
 
-    @resume_session.add_stage  # check answer
+    @resume_session.add_state(label="check_answer")  # check answer
     def _check_answer(self, session, *, response_sum):
         is_correct = (response_sum == session.a + session.b)
-        return True, {
+        return "$end", {
             "status": "correct" if is_correct else "incorrect",
             "score": is_correct * self.score
         }

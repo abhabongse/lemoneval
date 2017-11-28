@@ -25,8 +25,8 @@ class _resumable_method(CallableWrapper):
     """
     def update_method(self, session):
         resume_func = session._framework.resume_session
-        if hasattr(resume_func, "get_current_stage"):
-            resume_func = resume_func.get_current_stage(session)
+        if hasattr(resume_func, "get_current_phase"):
+            resume_func = resume_func.get_current_phase(session)
         resume_method = MethodType(resume_func, session)
         update_wrapper(self, resume_method, updated=())
         self.__doc__ = f"{trim(self.__doc__)}\n\n{trim(self._func.__doc__)}"
