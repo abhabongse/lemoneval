@@ -15,7 +15,7 @@ class AddingNumbersFramework(frameworks.BaseFramework):
     """
     lower_bound = parameters.Parameter(dtype=int)
     upper_bound = parameters.Parameter(dtype=int)
-    score = parameters.Parameter(dtype=int)
+    score = parameters.Parameter(dtype=int, default=10)
 
     @score.add_validators  # score must be positive
     def positive_score(score):

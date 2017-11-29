@@ -7,4 +7,5 @@ class ArgumentDefault():
 
     def __bool__(self):
         return False
-    
+
+EMPTY_DEFAULT = ArgumentDefault()

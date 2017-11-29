@@ -13,10 +13,10 @@ class MultipleChoicesFramework(frameworks.BaseFramework):
         answer: 0-index of the correct answer in choices
         score: Positive value score
     """
-    question = parameters.Parameter(dtype=str)  # question text
-    choices = parameters.SequenceParameter(dtype=str)   # choices
-    answer = parameters.Parameter(dtype=int)    # index to the right choice
-    score = parameters.Parameter(dtype=int)     # score of this question
+    question = parameters.Parameter(dtype=str)           # question text
+    choices = parameters.SequenceParameter(dtype=str)    # choices
+    answer = parameters.Parameter(dtype=int)    # 0-index to the right choice
+    score = parameters.Parameter(dtype=int, default=10)  # question score
 
     @score.add_validators  # score must be positive
     def positive_score(score):

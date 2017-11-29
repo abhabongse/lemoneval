@@ -6,6 +6,7 @@ examples of custom frameworks in modules under `lemoneval.assembled`.
 """
 
 from inspect import getfullargspec, Signature, Parameter
+from ..utils.argdefault import EMPTY_DEFAULT
 
 
 class _framework_builder(type):
@@ -41,9 +42,17 @@ class _framework_builder(type):
         parameters = []
         for name in cls.parameter_names:
             parameter_object = getattr(cls, name)
-            default = getattr(parameter_object, "default", Parameter.empty)
-            annotation = getattr(
-                parameter_object, "annotation", Parameter.empty
+            # Obtain default value
+            default = getattr(parameter_object, "default", EMPTY_DEFAULT)
+            default = (
+                default if default is not EMPTY_DEFAULT
+                else Parameter.empty
+            )
+            # Obtain annotation
+            annotation = getattr(parameter_object, "annotation", EMPTY_DEFAULT)
+            annotation = (
+                annotation if annotation is not EMPTY_DEFAULT
+                else Parameter.empty
             )
             parameters.append(Parameter(
                 name, Parameter.KEYWORD_ONLY,
@@ -64,7 +73,7 @@ class BaseFramework(object, metaclass=_framework_builder):
     # serialization.
     serialized_kwargs = "__dict__"
 
-    def __init__(self, *args, **parameters):
+    def __init__(self, **parameters):
         """To initialize an instance of the framework, all framework-specific
         parameters must be provided via keyword-only arguments through the
         constructor.
@@ -89,9 +98,8 @@ class BaseFramework(object, metaclass=_framework_builder):
         Superflous parameters are silently ignored.
         """
         for name in self.parameter_names:
-            if name not in parameters:
-                raise ValueError(f"missing parameter '{name}'")
-            setattr(self, name, parameters[name])
+            value = parameters.get(name, EMPTY_DEFAULT)
+            setattr(self, name, value)
 
     def framework_validate(self):
         """Framework-level validation: to be overriden by subclasses.

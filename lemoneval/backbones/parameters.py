@@ -3,9 +3,7 @@
 """Parameter classes for each attribute in exercise frameworks."""
 
 from typing import Sequence
-from ..utils.argdefault import ArgumentDefault
-
-_argdefault = ArgumentDefault()  # empty placeholder
+from ..utils.argdefault import EMPTY_DEFAULT
 
 
 class BaseParameter(object):
@@ -20,7 +18,7 @@ class BaseParameter(object):
 
     __slots__ = ("name",)
 
-    def __init__(self, *, name=_argdefault):
+    def __init__(self, *, name=EMPTY_DEFAULT):
         self.name = name
 
     def __set_name__(self, owner, name):
@@ -34,6 +32,8 @@ class BaseParameter(object):
     def __set__(self, instance, value):
         if self.name in instance.__dict__:
             raise AttributeError("reassigning parameter is not allowed")
+        if value is EMPTY_DEFAULT:
+            raise ValueError(f"missing parameter '{self.name}'")
         instance.__dict__[self.name] = self.parameter_validate(value)
 
     def __delete__(self, instance):
@@ -60,14 +60,12 @@ class DataTypeMixin(BaseParameter):
         annotation: Annotation for parameter values to be used in signatures.
     """
 
-    def __init__(self, *, dtype=_argdefault, annotation=_argdefault,
+    def __init__(self, *, dtype=EMPTY_DEFAULT, annotation=EMPTY_DEFAULT,
                     **kwargs):
         super().__init__(**kwargs)
-        if annotation is _argdefault:
+        if annotation is EMPTY_DEFAULT:
             annotation = dtype
-        if dtype is _argdefault:
-            return  # do nothing
-        if not isinstance(dtype, type):
+        if dtype is not EMPTY_DEFAULT and not isinstance(dtype, type):
             raise TypeError("invalid dtype specified")
         self.dtype = dtype
         self.annotation = annotation
@@ -88,10 +86,14 @@ class DataTypeMixin(BaseParameter):
 class DefaultValueMixin(BaseParameter):
     """Parameter mixin class for parameter default values."""
 
-    def __init__(self, *, default=_argdefault, **kwargs):
+    def __init__(self, *, default=EMPTY_DEFAULT, **kwargs):
         super().__init__(**kwargs)
-        if default is not _argdefault:
-            self.default = default
+        self.default = default
+
+    def __set__(self, instance, value):
+        if value is EMPTY_DEFAULT:
+            value = self.default
+        super().__set__(instance, value)
 
 
 class ValidatorMixin(BaseParameter):
@@ -151,8 +153,8 @@ class Parameter(ValidatorMixin, DefaultValueMixin,
                 DataTypeMixin, BaseParameter):
     """Single-value parameter descriptor for exercise framework."""
 
-    def __init__(self, *, name=_argdefault, dtype=_argdefault,
-                    default=_argdefault):
+    def __init__(self, *, name=EMPTY_DEFAULT, dtype=EMPTY_DEFAULT,
+                    default=EMPTY_DEFAULT):
         super().__init__(name=name, dtype=dtype, default=default)
 
     def parameter_validate(self, value):
@@ -180,11 +182,12 @@ class SequenceParameter(ValidatorMixin, DefaultValueMixin,
 
     __slots__ = ("lb_length", "ub_length")
 
-    def __init__(self, *, name=_argdefault, dtype=_argdefault,
-                    default=_argdefault, length=(0,)):
+    def __init__(self, *, name=EMPTY_DEFAULT, dtype=EMPTY_DEFAULT,
+                    default=EMPTY_DEFAULT, length=(0,)):
+        annotation = dtype and Sequence[dtype]
         super().__init__(
-            name=name, dtype=dtype, annotation=Sequence[dtype],
-            default=default)
+            name=name, dtype=dtype, annotation=annotation, default=default
+        )
         self.lb_length, self.ub_length = self._resolve_lengths(length)
 
     def parameter_validate(self, values):
