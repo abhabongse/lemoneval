@@ -23,7 +23,7 @@ class _resumable_method(CallableWrapper):
     """Every time `session.wrapped` method binding occurs, update
     documentation attributes on the method.
     """
-    def update_method(self, session):
+    def bind_hook(self, session, session_cls):
         resume_func = session._framework.resume_session
         if hasattr(resume_func, "get_current_phase"):
             resume_func = resume_func.get_current_phase(session)
