@@ -5,8 +5,15 @@ be. Custom frameworks are expected to be derived from `BaseFramework`. See
 examples of custom frameworks in modules under `lemoneval.assembled`.
 """
 
-from inspect import getfullargspec
-from itertools import chain
+from inspect import getfullargspec, Signature, Parameter
+
+
+def make_signature(parameter_names):
+    return Signature((
+        Parameter(name, Parameter.KEYWORD_ONLY)
+        for name in parameter_names
+    ))
+
 
 class _framework_builder(type):
     """A metaclass for `BaseFramework` and its subclasses."""
@@ -30,9 +37,9 @@ class _framework_builder(type):
                         f"but the name {name!r} is used"
                     )
                 new_parameter_names.append(name)
-        cls.parameter_names = tuple(chain(
-            old_parameter_names, new_parameter_names
-        ))
+        cls.parameter_names = old_parameter_names + tuple(new_parameter_names)
+        # Add signature for constructor
+        cls.__signature__ = make_signature(cls.parameter_names)
 
 
 class BaseFramework(object, metaclass=_framework_builder):
