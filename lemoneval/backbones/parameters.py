@@ -2,7 +2,9 @@
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 """Parameter classes for each attribute in exercise frameworks."""
 
+from typing import Sequence
 from ..utils.argdefault import ArgumentDefault
+
 _argdefault = ArgumentDefault()  # empty placeholder
 
 
@@ -51,15 +53,24 @@ class BaseParameter(object):
 
 
 class DataTypeMixin(BaseParameter):
-    """Parameter mixin class for parameter data type support."""
+    """Parameter mixin class for parameter data type support.
 
-    def __init__(self, *, dtype=_argdefault, **kwargs):
+    Attributes:
+        dtype (type): Type or class for parameter values.
+        annotation: Annotation for parameter values to be used in signatures.
+    """
+
+    def __init__(self, *, dtype=_argdefault, annotation=_argdefault,
+                    **kwargs):
         super().__init__(**kwargs)
+        if annotation is _argdefault:
+            annotation = dtype
         if dtype is _argdefault:
             return  # do nothing
         if not isinstance(dtype, type):
             raise TypeError("invalid dtype specified")
         self.dtype = dtype
+        self.annotation = annotation
 
     def check_dtype(self, value, raise_error=True):
         """Check the data type of the given value."""
@@ -150,7 +161,8 @@ class Parameter(ValidatorMixin, DefaultValueMixin,
         return value
 
 
-class SequenceParameter(Parameter):
+class SequenceParameter(ValidatorMixin, DefaultValueMixin,
+                        DataTypeMixin, BaseParameter):
     """Sequence of parameters descriptor for exercise framework.
 
     This is similar to Parameter, except that it is a sequence of values
@@ -170,7 +182,9 @@ class SequenceParameter(Parameter):
 
     def __init__(self, *, name=_argdefault, dtype=_argdefault,
                     default=_argdefault, length=(0,)):
-        super().__init__(name=name, dtype=dtype, default=default)
+        super().__init__(
+            name=name, dtype=dtype, annotation=Sequence[dtype],
+            default=default)
         self.lb_length, self.ub_length = self._resolve_lengths(length)
 
     def parameter_validate(self, values):

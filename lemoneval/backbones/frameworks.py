@@ -42,7 +42,9 @@ class _framework_builder(type):
         for name in cls.parameter_names:
             parameter_object = getattr(cls, name)
             default = getattr(parameter_object, "default", Parameter.empty)
-            annotation = getattr(parameter_object, "dtype", Parameter.empty)
+            annotation = getattr(
+                parameter_object, "annotation", Parameter.empty
+            )
             parameters.append(Parameter(
                 name, Parameter.KEYWORD_ONLY,
                 default=default, annotation=annotation
