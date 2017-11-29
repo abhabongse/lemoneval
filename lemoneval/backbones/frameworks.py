@@ -12,10 +12,11 @@ from ..utils.argdefault import EMPTY_DEFAULT
 class _framework_builder(type):
     """A metaclass for `BaseFramework` and its subclasses."""
 
-    def __init__(cls, clsname, bases, clsdict):
-        super().__init__(clsname, bases, clsdict)
+    def __new__(typecls, clsname, bases, clsdict):
+        cls = super().__new__(typecls, clsname, bases, clsdict)
         cls._extract_parameter_names(clsdict)
         cls._make_signature()
+        return cls
 
     def _extract_parameter_names(cls, clsdict):
         """Create `parameter_names` from `clsdict` for framework class."""
