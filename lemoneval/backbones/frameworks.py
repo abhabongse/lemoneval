@@ -8,19 +8,16 @@ examples of custom frameworks in modules under `lemoneval.assembled`.
 from inspect import getfullargspec, Signature, Parameter
 
 
-def make_signature(parameter_names):
-    return Signature((
-        Parameter(name, Parameter.KEYWORD_ONLY)
-        for name in parameter_names
-    ))
-
-
 class _framework_builder(type):
     """A metaclass for `BaseFramework` and its subclasses."""
 
     def __init__(cls, clsname, bases, clsdict):
         super().__init__(clsname, bases, clsdict)
-        # Create parameter_names from clsdict
+        cls._extract_parameter_names(clsdict)
+        cls._make_signature()
+
+    def _extract_parameter_names(cls, clsdict):
+        """Create `parameter_names` from `clsdict` for framework class."""
         old_parameter_names = getattr(cls, "parameter_names", ())
         new_parameter_names = []
         from .parameters import BaseParameter
@@ -38,8 +35,19 @@ class _framework_builder(type):
                     )
                 new_parameter_names.append(name)
         cls.parameter_names = old_parameter_names + tuple(new_parameter_names)
-        # Add signature for constructor
-        cls.__signature__ = make_signature(cls.parameter_names)
+
+    def _make_signature(cls):
+        """Create `inspect.Signature` object for framework class."""
+        parameters = []
+        for name in cls.parameter_names:
+            parameter_object = getattr(cls, name)
+            default = getattr(parameter_object, "default", Parameter.empty)
+            annotation = getattr(parameter_object, "dtype", Parameter.empty)
+            parameters.append(Parameter(
+                name, Parameter.KEYWORD_ONLY,
+                default=default, annotation=annotation
+            ))
+        cls.__signature__ = Signature(parameters)
 
 
 class BaseFramework(object, metaclass=_framework_builder):

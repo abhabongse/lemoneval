@@ -41,8 +41,7 @@ class PredicateValidator(BaseValidator):
                 raise ValueError
         except Exception as e:
             test_name = self.name or "the predicate test"
-            e.args += (
+            raise ValueError(
                 f"the given value {value!r} failed {test_name} for the "
-                f"parameter '{target}'",
-            )
-            raise
+                f"parameter '{target}'"
+            ) from e
