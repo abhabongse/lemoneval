@@ -7,9 +7,9 @@ from lemoneval.assembled.standard.multiplechoices import FiveChoicesFramework
 from lemoneval.backbones.sessions import Session
 from lemoneval.utils.json import loads
 
-########################################
-##  Unit test phase: Creation Errors  ##
-########################################
+##############################################
+##  Unit tests: Framework Creations Errors  ##
+##############################################
 
 class Phase_CreationErrors(unittest.TestCase):
 
@@ -51,24 +51,17 @@ class Phase_CreationErrors(unittest.TestCase):
                 answer=0
                 )
 
-#######################################################
-##  Set up a new multiple-choice question framework  ##
-#######################################################
+############################################
+##  Unit tests: After Framework Creation  ##
+############################################
 
 framework = FiveChoicesFramework(
     question="This is the question text",
     choices=("Choice A", "Choice B", "Choice C", "Choice D", "Choice E"),
     answer=0
 )
-session: Session = framework.create_session()
-json_str = session.to_json()
-new_session = loads(json_str)
 
-#######################################
-##  Unit test phase: After Creation  ##
-#######################################
-
-class Phase_AfterCreation(unittest.TestCase):
+class Phase_AfterFrameworkCreation(unittest.TestCase):
 
     def test_attributes(self):
         self.assertEqual(framework.question, "This is the question text")
@@ -79,6 +72,16 @@ class Phase_AfterCreation(unittest.TestCase):
     def test_readonly(self):
         with self.assertRaises(AttributeError):
             framework.answer = 1
+
+############################################################
+##  Unit tests: After Session Creation and Serialization  ##
+############################################################
+
+session: Session = framework.create_session()
+json_str = session.to_json()
+new_session = loads(json_str)
+
+class Phase_AfterSessionCreation(unittest.TestCase):
 
     def test_session(self):
         self.assertIs(session._framework, framework)
