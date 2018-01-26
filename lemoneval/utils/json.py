@@ -43,7 +43,7 @@ following key-value pairs:
         object instance reconstruction by class constructor.
     __kwargs__: Mandatory named keyword arguments (dict) to be supplemented
         upon object reconstruction by class constructor.
-    __dict__: Additional dictionary items to be added to `object.__dict__`
+    __dict__: Additional dictionary items to be updated to `object.__dict__`
         once the object is reconstructed by constructor.
 """
 
