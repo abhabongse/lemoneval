@@ -2,7 +2,7 @@
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 from ...backbones import frameworks, parameters
-from ...backbones.phases import StageSequence
+from ...utils.dispatches import StageSequence
 
 class MultipleChoicesFramework(frameworks.BaseFramework):
     """Multiple choice question framework with one correct answer.

@@ -2,7 +2,7 @@
 # Author: Abhabongse Janthong <6845502+abhabongse@users.noreply.github.com>
 
 from ...backbones import frameworks, parameters
-from ...backbones.phases import StateMachine
+from ...utils.dispatches import StateMachine
 
 class AddingNumbersFramework(frameworks.BaseFramework):
     """Simple algebra question: adding two integers which are uniformly
